@@ -10,6 +10,145 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Member {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String?   // Single phone number
+  bio           String?
+  profilePhoto  String?   // URL to profile photo
+  github        String?
+  linkedin      String?
+  twitter       String?
+  geeksforgeeks String?
+  leetcode      String?
+  codechef      String?
+  codeforces    String?
+  passoutYear   DateTime
+  isApproved    Boolean   @default(false)
+  isManager     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts            Account[]
+  achievements        MemberAchievement[]
+  projects            MemberProject[]
+  topicsCreated       Topic[]    @relation("MemberTopics")
+  questionsCreated    Question[] @relation("MemberQuestionsCreated")
+  interviews          InterviewExperience[]
+  completedQs         CompletedQuestion[]
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  provider          String
+  providerAccountId String
+  password          String?  // for email/password auth
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  member   Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId String
+
+  @@unique([provider, providerAccountId])
+}
+
+model Achievement {
+  id         Int                     @id @default(autoincrement())
+  title      String
+  achievedAt DateTime
+  imageUrl   String?
+  members    MemberAchievement[]
+}
+
+model MemberAchievement {
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId      String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  achievementId Int
+
+  @@id([memberId, achievementId])
+}
+
+model Project {
+  id         Int                    @id @default(autoincrement())
+  name       String
+  imageUrl   String?
+  githubUrl  String?
+  deployUrl  String?
+  members    MemberProject[]
+}
+
+model MemberProject {
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId  String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+
+  @@id([memberId, projectId])
+}
+
+model Topic {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String
+  /// Who created this topic; optional to allow system-generated topics or imports
+  createdBy   Member?    @relation("MemberTopics", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[]
+}
+
+model Question {
+  id           Int        @id @default(autoincrement())
+  questionName String
+  difficulty   Difficulty
+  link         String
+  topic        Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topicId      Int
+  // Who added this question; optional in case the member is deleted
+  createdBy    Member?    @relation("MemberQuestionsCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById  String?
+  completedBy  CompletedQuestion[]
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
+model InterviewExperience {
+  id       Int     @id @default(autoincrement())
+  company  String
+  role     String
+  verdict  Verdict
+  content  String
+  isAnonymous Boolean
+  member   Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId String
+}
+enum Verdict {
+  Selected
+  Rejected
+  Pending
+}
+
+model CompletedQuestion {
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId    String
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId  Int
+
+  @@id([memberId, questionId])
 }
