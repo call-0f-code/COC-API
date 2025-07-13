@@ -1,6 +1,6 @@
 # COC-API
 
-This repository contains the Express.js API for our Coding Club backends, backed by PostgreSQL (via Prisma) and Supabase storage. We’re using **Bun** as our runtime.
+This repository contains the common Express.js API for the backends of our Coding Club's websites , backed by PostgreSQL (via Prisma) and Supabase storage. We’re using **Bun** as our runtime.
 
 ## 📂 Folder Structure
 
