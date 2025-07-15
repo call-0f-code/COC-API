@@ -10,7 +10,7 @@ import config from './config'
 
 // Initialize Supabase client for storage operations
 export const supabase = createClient(
-  config.SUPABASE_URL,
+  config.DIRECT_URL,
   config.SUPABASE_ANON_KEY
 )
 
