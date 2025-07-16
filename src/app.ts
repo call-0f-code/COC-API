@@ -8,9 +8,10 @@ import { errorHandler } from './utils/apiError'
 import { createClient } from '@supabase/supabase-js'
 import config from './config'
 
+
 // Initialize Supabase client for storage operations
 export const supabase = createClient(
-  config.DIRECT_URL,
+  config.SUPABASE_URL,
   config.SUPABASE_ANON_KEY
 )
 
@@ -28,7 +29,10 @@ app.use(json())
 app.use(urlencoded({ extended: true }))
 
 // 3) Handle file uploads (in-memory)
-const upload = multer({ storage: multer.memoryStorage() })
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {fileSize: 5 * 1024 * 1024}
+ })
 
 // 4) Mount your routes, injecting `upload` middleware where needed
 //    For endpoints that accept file uploads, you can do e.g.:
