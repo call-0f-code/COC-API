@@ -7,7 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest"  
+    "test": "jest",
+    "apidoc": "apidoc -c apidoc.json"
+
   },
   "repository": {
     "type": "git",
@@ -45,6 +47,7 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.0.13",
+    "apidoc": "^1.2.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
