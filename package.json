@@ -7,9 +7,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest",
-    "apidoc": "apidoc -c apidoc.json"
-
+    "test": "jest" ,
+    "dev" : " " 
   },
   "repository": {
     "type": "git",
