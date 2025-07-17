@@ -1,6 +1,4 @@
-import { client } from '../db/client'
-import dotenv from 'dotenv';
-import path from 'path';
+import { prisma } from '../db/client'
 import { ApiError } from '../utils/apiError';
 
 interface UpdateMemberPayload {
@@ -15,13 +13,12 @@ interface UpdateMemberPayload {
   leetcode?: string;
   codechef?: string;
   codeforces?: string;
-  passoutYear?: string;
   isApproved?: boolean;
 }
 
 
 export const checkAdmin = async(adminId: string) => {
-    return await client.member.findUnique({
+    return await prisma.member.findUnique({
         where: {
             id: adminId,
             isManager: true
@@ -32,7 +29,7 @@ export const checkAdmin = async(adminId: string) => {
 
 export const approvedMembers = async () => {
   
-    return await client.member.findMany({
+    return await prisma.member.findMany({
         where: {
             isApproved: true
         }
@@ -41,7 +38,7 @@ export const approvedMembers = async () => {
 };
 
 export const getDetails = async(memberId: string) => {
-    return await client.member.findUnique({
+    return await prisma.member.findUnique({
         where: {
             id: memberId
         }
@@ -54,7 +51,7 @@ export const createMember = async(
         password: string,
         passoutYear: number
     ) => {
-        const newMember =  await client.member.create ({
+        const newMember =  await prisma.member.create ({
             data: {
                 email: email,
                 name: name, 
@@ -62,7 +59,7 @@ export const createMember = async(
             },
         })
 
-        await client.account.create({
+        await prisma.account.create({
             data: {
             provider: "credentials",
             providerAccountId: email,
@@ -78,7 +75,7 @@ export const createMember = async(
 export const updateMember = async(id:string, payload: UpdateMemberPayload) => {
 
     const { name, ...rest } = payload
-    const member =  await client.member.findUnique({
+    const member =  await prisma.member.findUnique({
         where: {
             id: id
         }
@@ -92,14 +89,14 @@ export const updateMember = async(id:string, payload: UpdateMemberPayload) => {
         Object.entries(rest).filter(([_, v]) => v !== undefined)
     );
 
-    return await client.member.updateMany({
+    return await prisma.member.updateMany({
         where: { id },
         data: dataToUpdate,
     });
 }
 
 export const unapprovedMembers = async() => {
-    return await client.member.findMany ({
+    return await prisma.member.findMany ({
         where: {isApproved: false}
     })
 }
@@ -111,7 +108,7 @@ export const approveRequest = async(isApproved: boolean, adminId: string, member
 
     if(!admin) throw new ApiError('Forbidden access', 403)
 
-    return await client.member.update({
+    return await prisma.member.update({
         where: { id: memberId },
         data: {
             isApproved: isApproved
@@ -120,7 +117,7 @@ export const approveRequest = async(isApproved: boolean, adminId: string, member
 }
 
 export const getAchievements = async(id: string) => {
-    return await client.achievement.findMany({
+    return await prisma.achievement.findMany({
         where: {
             members: {
                 some: {
@@ -132,7 +129,7 @@ export const getAchievements = async(id: string) => {
 }
 
 export const getProjects = async(id: string) => {
-    return await client.project.findMany({
+    return await prisma.project.findMany({
         where: {
             members: {
                 some: {
@@ -144,7 +141,7 @@ export const getProjects = async(id: string) => {
 }
 
 export const getInterviews = async(id: string) => {
-    return await client.interviewExperience.findMany({
+    return await prisma.interviewExperience.findMany({
         where:{memberId: id}
     })
 }

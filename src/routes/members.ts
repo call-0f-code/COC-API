@@ -134,7 +134,7 @@ router.get('/interviews/:memberId', memberCtrl.getUserInterviews);
    */
   router.post('/photo/:memberId',
     upload.single("file"),
-    injectSupabase(supabase)
+    injectSupabase(supabase, "member")
 
   );
 
