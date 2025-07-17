@@ -23,7 +23,7 @@ export const getQuestionByTopicId = async(req:Request,res:Response)=>{
 export const addQuestion = async(req:Request,res:Response)=>{
     const topicId = parseInt(req.params.topicId);
     const {questionName,difficulty,link} = req.body
-    const adminId = req.AdminId;
+    const adminId = req.body.adminId;
     if(!questionName || !difficulty || !link || !adminId || !topicId){
         throw new ApiError("required field missing",400);
     }
@@ -60,11 +60,12 @@ export const getQuestionByQuestionId = async(req:Request,res:Response)=>{
 
 
 export const updateQuestion = async(req:Request,res:Response)=>{
-    const questionId = parseInt(req.body.questionId);
-    const adminId = req.AdminId;
+    const questionId = parseInt(req.params.questionId);
+    // req.body.adminId -> req.body
+    const adminId = req.body.adminId;
     const questionData:questionData = req.body;
     questionData.id = questionId
-
+console.log(questionData + " " + adminId)
     if(!questionData || adminId){
         throw new ApiError("required field missing",400);
     }

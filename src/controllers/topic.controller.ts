@@ -14,7 +14,8 @@ export const getTopics = async(req:Request,res:Response) => {
 
 export const createTopic = async(req:Request,res:Response) =>{
     const {title,description} = req.body
-    const adminId = req.AdminId
+    // req.body.adminId -> change to -> req.adminId
+    const adminId = req.body.adminId
     if(!title || !description || !adminId){
         throw new ApiError("missing required fields",400);
     }
@@ -28,7 +29,10 @@ export const createTopic = async(req:Request,res:Response) =>{
 
 export const updateTopic = async(req:Request,res:Response) =>{
     const topicId = parseInt(req.params.topicId);
-    const adminId = req.AdminId;
+   // req.body.adminId -> change to -> req.adminId
+    const adminId = req.body.adminId
+
+// Admin is not updating
     const updateData = { 
         ...(req.body.title && { title: req.body.title }), 
         ...(req.body.description && { description: req.body.description })
