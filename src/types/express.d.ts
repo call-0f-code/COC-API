@@ -16,6 +16,10 @@ declare global {
 
       /** Only if you choose to inject supabase into `req` via middleware */
       supabase?: SupabaseClient;
+
+      projectId ?: string;
+      
     }
   }
+
 }

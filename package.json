@@ -6,7 +6,12 @@
   "directories": {
     "test": "tests"
   },
-  "scripts": {},
+
+  "scripts": {
+    "test": "jest",
+    "apidoc": "apidoc -c apidoc.json"
+
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/call-0f-code/COC-API.git"
@@ -40,17 +45,22 @@
     "@types/bun": "^1.2.18",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.0.13",
     "@types/uuid": "^10.0.0",
+    "apidoc": "^1.2.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "husky": "^9.1.7",
+    "jest": "^30.0.4",
     "multer": "^2.0.1",
     "ts-node": "^10.9.2",
     "uuid": "^11.1.0"
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2"
   },
   "private": true
 }
