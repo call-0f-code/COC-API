@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { Multer } from 'multer'
 import { SupabaseClient } from '@supabase/supabase-js'
-import membersRouter from './members'
+// import membersRouter from './members'
 import projectsRouter from './projects'
 // bakiche tumhi import kara mala kantala ala
 

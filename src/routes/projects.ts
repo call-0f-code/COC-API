@@ -21,53 +21,31 @@ export default function projectsRouter(
     const router = Router()
 
     //   Getting all User
-    router.get(
-        '/',
-        getProjects
-    )
+    router.get('/', getProjects)
 
     //  get Project by Id
-    router.get(
-        '/:projectId',
-        getProjectById
-    )
+    router.get('/:projectId', getProjectById)
 
     //  Create project
-    router.post(
-        '/create',
-        createProject
-    )
+    router.post('/create', createProject )
 
     //  Update Project
-    router.patch(
-        '/:projectId',
-        updateProjects
-    )
+    router.patch('/:projectId', updateProjects )
 
     //  delete projects
-    router.delete(
-        '/:projectId',
-        deleteProjects
-    )
+    router.delete('/:projectId', deleteProjects )
 
     //  getMember by ProjectId
 
-    router.get(
-        '/:projectId/members',
-        getMembersByProjectId
-    )
+    router.get('/:projectId/members', getMembersByProjectId )
 
     //  add member to project
-    router.post(
-        '/:projectId/members',
-        addMembers
-    )
+
+    router.post('/:projectId/members' , addMembers )
 
     //  Remover the memnber
-    router.delete(
-        '/:projectId/members/:memberId',
-        removeMembers
-    )
+    
+    router.delete( '/:projectId/members/:memberId', removeMembers)
 
     // Photo upload endpoint:
     //   router.post(
