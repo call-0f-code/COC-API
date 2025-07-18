@@ -9,7 +9,6 @@
   "scripts": {
     "test": "jest",
     "apidoc": "apidoc -c apidoc.json"
-
   },
   "repository": {
     "type": "git",
@@ -31,6 +30,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
     "globals": "^16.3.0",
+    "jest-mock-extended": "^4.0.0",
     "lint-staged": "^16.1.2",
     "prettier": "^3.6.2",
     "prisma": "^6.11.1",
@@ -41,7 +41,6 @@
   "dependencies": {
     "@prisma/client": "^6.11.1",
     "@supabase/supabase-js": "^2.50.5",
-    "@types/bun": "^1.2.18",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
