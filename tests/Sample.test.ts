@@ -19,6 +19,11 @@ describe('createProject', () => {
       imageUrl: 'https://example.com/image.png',
       githubUrl: 'https://github.com/example/eventhub',
       deployUrl: 'https://eventhub.example.com',
+      createdById: null,
+      createdAt: new Date(),
+      updatedById: null,
+      updatedAt: new Date(),
+
     };
     //this stops the call from doing to database and returns the value as resolved promise
     prismaMock.project.create.mockResolvedValue(mockCreatedProject);
