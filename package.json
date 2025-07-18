@@ -14,8 +14,9 @@
     "format": "prettier --write src/",
     "lint:fix": "eslint src/ --fix",
     "precommit": "lint-staged",
-    "migrate": "bunx prisma migrate dev --name init",
-    "generate": "bunx run prisma generate"
+    "migrate:first":"bunx prisma migrate dev --name init",
+    "migrate": "bunx prisma migrate dev",
+    "generate": "bunx prisma generate"
   },
   "repository": {
     "type": "git",
