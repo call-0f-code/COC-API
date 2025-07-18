@@ -1,5 +1,3 @@
-console.log(process.env.DIRECT_URL)
-
 export default {
   PORT: process.env.PORT,
   DATABASE_URL: process.env.DATABASE_URL!,

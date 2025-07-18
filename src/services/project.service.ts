@@ -1,7 +1,7 @@
 import { prisma } from "../db/client";
 
 
-export const getPrjects = async () => {
+export const getProjects = async () => {
         return await prisma.project.findMany({})
 };
 
@@ -9,7 +9,7 @@ export const getPrjects = async () => {
 
 export const getProjectById = async ( projectId : number ) => {
 
-        return await prisma.project.findFirst({
+        return await prisma.project.findUniqueOrThrow({
             where : {
                 id : projectId
             }
@@ -24,7 +24,7 @@ export const createProject = async ( projectContent : projectContent ) => {
             imageUrl : projectContent.imageUrl,
             githubUrl : projectContent.githubUrl,
             deployUrl : projectContent.deployUrl,
-        }
+        },
     })
    };
 
@@ -59,11 +59,9 @@ export const getMembersByProjectId = async ( projectId : number ) => {
 
 export const addMembers = async ( addMembersData : addMembersData ) => {
 
-    return await prisma.memberProject.create({
-        data :{
-            memberId : addMembersData.memberId,
-            projectId : addMembersData.projectId,
-        }
+    return await prisma.memberProject.createMany({
+        data : addMembersData,
+        skipDuplicates : true
     })
 }
 

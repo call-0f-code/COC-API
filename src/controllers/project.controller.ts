@@ -1,11 +1,12 @@
 import * as projectService from "../services/project.service";
 import { Request ,  Response } from "express";
 import { ApiError } from "../utils/apiError";
+import { error } from "console";
 
 export const getProjects = async ( req : Request , res : Response ) => {
 
         try {
-                const projects = await projectService.getPrjects();
+                const projects = await projectService.getProjects();
                 res.status(200).json(projects);
         } catch (error) {
                 throw new ApiError( "No project found !!!" , 500)
@@ -17,6 +18,7 @@ export const getProjectById = async ( req : Request , res : Response ) => {
         try{
             const projectId = parseInt( req.params.projectId );
             if( !projectId ) throw new ApiError( " Field is missing !!!" , 400);
+
             const project = await projectService.getProjectById( projectId );
             res.status(200).json(project);
 
@@ -28,13 +30,9 @@ export const getProjectById = async ( req : Request , res : Response ) => {
 export const createProject = async ( req : Request , res : Response ) => {
 
         try {
-                    const projectContent = {
-                        name: req.body.name,
-                        imageUrl: req.body.imageUrl,
-                        githubUrl: req.body.githubUrl,
-                        deployUrl: req.body.deployUrl,
-                        adminId: req.AdminId,
-                    };
+                    const projectContent = req.body;
+
+                    if( !projectContent.name || !projectContent.githubUrl) throw new ApiError( " Field is missing !!!" , 400);
 
                 const project = await projectService.createProject(projectContent);
                 res.status(200).json(project);
@@ -66,12 +64,10 @@ export const deleteProjects = async ( req : Request , res : Response ) => {
              const projectId = parseInt(req.params.projectId);
             if( !projectId ) throw new ApiError( " Send The project id " , 400);
 
-
             const deleted = await projectService.deleteProjects( projectId );
             res.status(200).json(deleted)
 
     } catch (error) {
-        console.log(error)
             throw new ApiError( error as string , 500);
     }
         
@@ -81,7 +77,6 @@ export const getMembersByProjectId = async ( req : Request , res : Response ) =>
 
     try {
                 const projectId = parseInt( req.params.ProjectId );
-
                 if( !projectId ) throw new ApiError( " Project Id required !!! " , 400);  
 
                 const members = await projectService.getMembersByProjectId(projectId);
@@ -98,15 +93,19 @@ export const getMembersByProjectId = async ( req : Request , res : Response ) =>
 export const addMembers = async ( req : Request , res : Response ) => {
 
     try {
-            const data = {
-                projectId : parseInt ( req.params.projectId ),
-                memberId :  req.body.memberId 
-            }
+                const  projectId = parseInt( req.params.projectId );
+                const memberData = req.body.memberId;
+                if( !projectId || memberData.length === 0) throw new ApiError(" field is missing " , 400);
+
+                const data  = memberData.map( (memberId: string) => ({
+                projectId,
+                memberId
+            }))
 
              const member = await projectService.addMembers( data );
-            res.status(200).json(member)
+            res.status(200).json(member);
+
     } catch (error) {
-        console.log(error)
           throw new ApiError( error as string , 500);
     }
 }
