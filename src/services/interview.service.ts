@@ -1,5 +1,5 @@
 import { prisma } from "../db/client"
-import { InterviewCreateInput, InterviewUpdateInput } from "../types/interview.types";
+// import { InterviewCreateInput, InterviewUpdateInput } from "../types/interview.types";
 
 export const getInterviews = async () => {
   return await prisma.interviewExperience.findMany({

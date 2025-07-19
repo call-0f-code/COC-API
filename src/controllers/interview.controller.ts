@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as interviewService from "../services/interview.service";
 import { ApiError } from "../utils/apiError";
 
-export const getInterviews = async (req: Request, res: Response, next: NextFunction) => {
+export const getInterviews = async (req: Request, res: Response) => {
   const interviews = await interviewService.getInterviews();
 
   res.status(200).json({
@@ -11,7 +11,7 @@ export const getInterviews = async (req: Request, res: Response, next: NextFunct
   });
 };
 
-export const getInterviewById = async (req: Request, res: Response, next: NextFunction) => {
+export const getInterviewById = async (req: Request, res: Response) => {
   const interviewId = parseInt(req.params.id);
 
   if (!interviewId) {
@@ -31,7 +31,7 @@ export const getInterviewById = async (req: Request, res: Response, next: NextFu
 };
 
 
-export const createInterview = async (req: Request, res: Response, next: NextFunction) => {
+export const createInterview = async (req: Request, res: Response) => {
   const memberId = req.params.memberId;
 
   if (!memberId) {
@@ -58,7 +58,7 @@ export const createInterview = async (req: Request, res: Response, next: NextFun
   });
 };
 
-export const updateInterviewById = async (req: Request, res: Response, next: NextFunction) => {
+export const updateInterviewById = async (req: Request, res: Response) => {
   const interviewId = parseInt(req.params.id);
 
   if (!interviewId) {
@@ -97,7 +97,7 @@ export const updateInterviewById = async (req: Request, res: Response, next: Nex
 };
 
 
-export const deleteInterviewById = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteInterviewById = async (req: Request, res: Response) => {
   const interviewId = parseInt(req.params.id);
 
   if (!interviewId) {

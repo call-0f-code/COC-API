@@ -18,6 +18,8 @@ declare global {
       supabase?: SupabaseClient;
 
       projectId ?: string;
+
+      achievementId ?: string;
       
     }
   }
