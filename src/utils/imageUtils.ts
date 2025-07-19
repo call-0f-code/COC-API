@@ -70,10 +70,8 @@ export async function deleteImage(
   supabase: SupabaseClient,
   fileUrl: string
 ): Promise<void> {
-async function deleteImage(fileUrl: string) {
   const { filePath } = extractFilePathAndNameFromUrl(fileUrl)
-  // ...rest of the deletion logic...
-}
+
   const { error: deleteError } = await supabase
     .storage
     .from('images')
