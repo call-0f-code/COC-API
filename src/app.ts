@@ -7,6 +7,8 @@ import routes from './routes'
 import { errorHandler } from './utils/apiError'
 import { createClient } from '@supabase/supabase-js'
 import config from './config'
+import path from 'path'
+
 
 
 // Initialize Supabase client for storage operations
@@ -48,4 +50,7 @@ app.use((req, res) => {
 // 6) Global error handler
 app.use(errorHandler)
 
+// 7) do 'npm run apidoc to generate the documentation, I have added it in the scripts
+//    then you can go to localhost:3000/docs to see the docs
+app.use('/docs', express.static(path.join(__dirname, '..', 'docs/apidoc')))
 export default app
