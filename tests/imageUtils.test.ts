@@ -43,6 +43,27 @@ describe('imageUtils', () => {
       expect(url).toBe('https://public.url/file.png');
     });
 
+    it('uses existing filename from fileUrl if provided', async () => {
+      // Simulate providing an existing URL so the helper extracts the filename
+      const existingUrl = 'https://xyz.supabase.co/storage/v1/object/public/images/folder/existing.png';
+      storageMock.upload.mockResolvedValue({ error: null });
+      storageMock.getPublicUrl.mockReturnValue({ data: { publicUrl: 'https://public.url/existing.png' } });
+
+      const url = await uploadImage(
+        mockSupabase as SupabaseClient,
+        dummyFile,
+        'folder',
+        existingUrl
+      );
+      // Should use filename 'existing.png' instead of generating with uuid
+      expect(storageMock.upload).toHaveBeenCalledWith(
+        'folder/existing.png',
+        dummyFile.buffer,
+        { contentType: dummyFile.mimetype, upsert: true }
+      );
+      expect(url).toBe('https://public.url/existing.png');
+    });
+
     it('throws ApiError for missing mimetype', async () => {
       const badFile = { ...dummyFile, mimetype: '' };
       await expect(
