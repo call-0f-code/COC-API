@@ -13,7 +13,7 @@ import path from 'path'
 
 // Initialize Supabase client for storage operations
 export const supabase = createClient(
-  config.DIRECT_URL,
+  config.SUPABSE_URL,
   config.SUPABASE_SERVICE_ROLE_KEY
 )
 
@@ -33,7 +33,7 @@ app.use(urlencoded({ extended: true }))
 // 3) Handle file uploads (in-memory)
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: {fileSize: 5 * 1024 * 1024}
+  limits: {fileSize: 2 * 1024 * 1024}
  })
 
 // 4) Mount your routes, injecting `upload` middleware where needed

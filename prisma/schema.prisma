@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -9,163 +6,137 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("SUPABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Member {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  phone         String? // Single phone number
-  bio           String?
-  profilePhoto  String? // URL to profile photo
-  github        String?
-  linkedin      String?
-  twitter       String?
-  geeksforgeeks String?
-  leetcode      String?
-  codechef      String?
-  codeforces    String?
-  passoutYear   DateTime
-  isApproved    Boolean  @default(false)
-  isManager     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Approval audit (self-reference)
-  approvedBy      Member?  @relation("MemberApprovals", fields: [approvedById], references: [id])
-  approvedById    String?
-  approvedMembers Member[] @relation("MemberApprovals")
-
-  // Authentication & Relations
-  accounts     Account[]
-  achievements MemberAchievement[]
-  projects     MemberProject[]
-  interviews   InterviewExperience[]
-  completedQs  CompletedQuestion[]
-
-  // Back-relations for audit fields
-  createdTopics       Topic[]       @relation("TopicCreatedBy")
-  updatedTopics       Topic[]       @relation("TopicUpdatedBy")
-  createdQuestions    Question[]    @relation("QuestionCreatedBy")
-  updatedQuestions    Question[]    @relation("QuestionUpdatedBy")
-  createdAchievements Achievement[] @relation("AchievementCreatedBy")
-  updatedAchievements Achievement[] @relation("AchievementUpdatedBy")
-  createdProjects     Project[]     @relation("ProjectCreatedBy")
-  updatedProjects     Project[]     @relation("ProjectUpdatedBy")
+  id                  String                @id @default(uuid())
+  name                String
+  email               String                @unique
+  phone               String?
+  bio                 String?
+  profilePhoto        String?
+  github              String?
+  linkedin            String?
+  twitter             String?
+  geeksforgeeks       String?
+  leetcode            String?
+  codechef            String?
+  codeforces          String?
+  passoutYear         DateTime
+  isApproved          Boolean               @default(false)
+  isManager           Boolean               @default(false)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  approvedById        String?
+  accounts            Account[]
+  createdAchievements Achievement[]         @relation("AchievementCreatedBy")
+  updatedAchievements Achievement[]         @relation("AchievementUpdatedBy")
+  completedQs         CompletedQuestion[]
+  interviews          InterviewExperience[]
+  approvedBy          Member?               @relation("MemberApprovals", fields: [approvedById], references: [id])
+  approvedMembers     Member[]              @relation("MemberApprovals")
+  achievements        MemberAchievement[]
+  projects            MemberProject[]
+  createdProjects     Project[]             @relation("ProjectCreatedBy")
+  updatedProjects     Project[]             @relation("ProjectUpdatedBy")
+  createdQuestions    Question[]            @relation("QuestionCreatedBy")
+  updatedQuestions    Question[]            @relation("QuestionUpdatedBy")
+  createdTopics       Topic[]               @relation("TopicCreatedBy")
+  updatedTopics       Topic[]               @relation("TopicUpdatedBy")
 }
 
 model Account {
   id                String    @id @default(uuid())
   provider          String
   providerAccountId String
-  password          String? // for email/password auth
+  password          String?
   accessToken       String?
   refreshToken      String?
   expiresAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  memberId String
+  memberId          String
+  member            Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
 model Achievement {
-  id          Int      @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   title       String
-  description String
   achievedAt  DateTime
   imageUrl    String
-
-  // Audit fields
-  createdBy   Member?  @relation("AchievementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime            @default(now())
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedBy   Member?  @relation("AchievementUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  description String
+  updatedAt   DateTime            @updatedAt
   updatedById String?
-  updatedAt   DateTime @updatedAt
-
-  members MemberAchievement[]
+  createdBy   Member?             @relation("AchievementCreatedBy", fields: [createdById], references: [id])
+  updatedBy   Member?             @relation("AchievementUpdatedBy", fields: [updatedById], references: [id])
+  members     MemberAchievement[]
 }
 
 model MemberAchievement {
-  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
   memberId      String
-  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
   achievementId Int
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@id([memberId, achievementId])
 }
 
 model Project {
-  id        Int     @id @default(autoincrement())
-  name      String
-  imageUrl  String?
-  githubUrl String?
-  deployUrl String?
-
-  // Audit fields
-  createdBy   Member?  @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  id          Int             @id @default(autoincrement())
+  name        String
+  imageUrl    String?
+  githubUrl   String?
+  deployUrl   String?
+  createdAt   DateTime        @default(now())
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedBy   Member?  @relation("ProjectUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime        @updatedAt
   updatedById String?
-  updatedAt   DateTime @updatedAt
-
-  members MemberProject[]
+  members     MemberProject[]
+  createdBy   Member?         @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  updatedBy   Member?         @relation("ProjectUpdatedBy", fields: [updatedById], references: [id])
 }
 
 model MemberProject {
-  member    Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
   memberId  String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId Int
+  member    Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@id([memberId, projectId])
 }
 
 model Topic {
-  id          Int    @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   title       String
   description String
-
-  // Audit fields
-  createdBy   Member?  @relation("TopicCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedBy   Member?  @relation("TopicUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   updatedById String?
-  updatedAt   DateTime @updatedAt
-
-  questions Question[]
+  questions   Question[]
+  createdBy   Member?    @relation("TopicCreatedBy", fields: [createdById], references: [id])
+  updatedBy   Member?    @relation("TopicUpdatedBy", fields: [updatedById], references: [id])
 }
 
 model Question {
-  id           Int        @id @default(autoincrement())
+  id           Int                 @id @default(autoincrement())
   questionName String
   difficulty   Difficulty
   link         String
-
-  topic   Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  topicId Int
-
-  // Audit fields
-  createdBy   Member?  @relation("QuestionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedBy   Member?  @relation("QuestionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
-  updatedById String?
-  updatedAt   DateTime @updatedAt
-
-  completedBy CompletedQuestion[]
-}
-
-enum Difficulty {
-  Easy
-  Medium
-  Hard
+  topicId      Int
+  createdById  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  updatedById  String?
+  completedBy  CompletedQuestion[]
+  createdBy    Member?             @relation("QuestionCreatedBy", fields: [createdById], references: [id])
+  topic        Topic               @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  updatedBy    Member?             @relation("QuestionUpdatedBy", fields: [updatedById], references: [id])
 }
 
 model InterviewExperience {
@@ -175,21 +146,27 @@ model InterviewExperience {
   verdict     Verdict
   content     String
   isAnonymous Boolean
-  member      Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
   memberId    String
+  member      Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model CompletedQuestion {
+  memberId   String
+  questionId Int
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([memberId, questionId])
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
 }
 
 enum Verdict {
   Selected
   Rejected
   Pending
-}
-
-model CompletedQuestion {
-  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  memberId   String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId Int
-
-  @@id([memberId, questionId])
 }
