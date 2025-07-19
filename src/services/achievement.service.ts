@@ -1,12 +1,5 @@
 import { prisma } from "../db/client";
-
-
-export interface AchievementUpdateInput {
-  title?: string;
-  achievedAt?: string;
-  imageUrl?: string | null;
-}
-
+// import { UpdateAchievementInput, CreateAchievementInput } from "../types/acheivement.types";
 
 export const getAchievements = async () => {
   return await prisma.achievement.findMany({
@@ -16,11 +9,26 @@ export const getAchievements = async () => {
   });
 };
 
-export const getAchievementById = async (achievementId : number) => {
-  return await prisma.achievement.findFirst({
-    where: {
-      id: Number(achievementId),
+
+export const createAchievement = async (data: CreateAchievementInput) => {
+  return await prisma.achievement.create({
+    data: {
+      title: data.title,
+      achievedAt: new Date(data.achievedAt),
+      imageUrl: data.imageUrl,
+      members: {
+        create: data.memberIds.map((memberId) => ({
+          memberId,
+        })),
+      },
     },
+  });
+};
+
+
+export const getAchievementById = async (achievementId: number) => {
+  return await prisma.achievement.findUnique({
+    where: { id: achievementId },
     select: {
       id: true,
       title: true,
@@ -42,20 +50,55 @@ export const getAchievementById = async (achievementId : number) => {
   });
 };
 
-
-export const updateAchievementById = async (achievementId : number, updateContent : AchievementUpdateInput) => {
+export const updateAchievementById = async (
+  achievementId: number,
+  updateContent: UpdateAchievementInput) => {
   return await prisma.achievement.update({
-    where: {
-      id: Number(achievementId),
+    where: { id: achievementId },
+    data: {
+      ...updateContent,
+      // achievedAt: updateContent.achievedAt ? new Date(updateContent.achievedAt) : undefined,
     },
-    data: updateContent
   });
 };
 
+// export const addMemberToAchievement = async (data: { achievementId: number; memberId: string }) => {
+//   return await prisma.memberAchievement.create({
+//     data: {
+//       achievementId: data.achievementId,
+//       memberId: data.memberId,
+//     },
+//   });
+// };
+
+
+export const addMembersToAchievement = async (achievementId: number, memberIds: string[]) => {
+  if (!Array.isArray(memberIds) || memberIds.length === 0) return;
+
+  await prisma.memberAchievement.createMany({
+    data: memberIds.map((memberId) => ({
+      memberId,
+      achievementId,
+    })),
+    skipDuplicates: true,
+  });
+};
+
+
 export const deleteAchievementById = async (achievementId: number) => {
-  await prisma.achievement.delete({
+  return await prisma.achievement.delete({
+    where: { id: achievementId },
+  });
+};
+
+
+export const removeMemberFromAchievement = async (achievementId: number, memberId: string) => {
+  return await prisma.memberAchievement.delete({
     where: {
-      id: achievementId,
+      memberId_achievementId: {
+        memberId,
+        achievementId,
+      },
     },
   });
 };

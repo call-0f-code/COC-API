@@ -12,10 +12,12 @@ export default function acheivementsRouter(upload: Multer, supabase: SupabaseCli
 
 
     router.get('/', acheivementsCtrl.getAchievements);
-    router.get('/:acheivementId',acheivementsCtrl.getAchievementById);
-    router.patch('/:acheivementId',acheivementsCtrl.updateAchievementById);
-    router.delete('/:acheivementId',acheivementsCtrl.deleteAchievementById);
-
+    router.get("/:achievementId", acheivementsCtrl.getAchievementById);
+    router.post("/", acheivementsCtrl.createAchievement);
+    router.patch("/:achievementId", acheivementsCtrl.updateAchievementById);
+    router.delete("/:achievementId", acheivementsCtrl.deleteAchievementById);
+    // router.post("/:achievementId/members", acheivementsCtrl.addMemberToAchievement);  // add single member
+    router.delete("/:achievementId/members", acheivementsCtrl.removeMemberFromAchievement);
 
 
     return router
