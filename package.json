@@ -54,11 +54,8 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.0.13",
-<<<<<<< HEAD
     "@types/uuid": "^10.0.0",
-=======
     "apidoc": "^1.2.0",
->>>>>>> eaa95dba49ac9eb6b8f4feb9415623ce7b65b83e
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
@@ -66,13 +63,9 @@
     "husky": "^9.1.7",
     "jest": "^30.0.4",
     "multer": "^2.0.1",
-<<<<<<< HEAD
     "ts-node": "^10.9.2",
-    "uuid": "^11.1.0"
-=======
-    "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2"
->>>>>>> eaa95dba49ac9eb6b8f4feb9415623ce7b65b83e
+    "uuid": "^11.1.0",
+    "ts-jest": "^29.4.0"
   },
   "private": true
 }
