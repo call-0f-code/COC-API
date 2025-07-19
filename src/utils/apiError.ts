@@ -40,7 +40,7 @@ export function errorHandler(
 
   const responseBody: ErrorResponse = {
     error: true,
-    message,
+    message: message
   }
 
   // Include stack trace in development for debugging
