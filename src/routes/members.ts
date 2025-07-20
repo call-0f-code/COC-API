@@ -1,142 +1,171 @@
-import express from 'express';
-import * as memberCtrl from '../controllers/member.controller';
-import { supabase } from '../app';
-import { Multer } from 'multer';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { injectSupabase } from '../controllers/supabase.controller';
+import express from "express";
+import * as memberCtrl from "../controllers/member.controller";
+import { supabase } from "../app";
+import { Multer } from "multer";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { injectSupabase } from "../controllers/supabase.controller";
 
-
-export default function membersRouter(upload: Multer, supabase: SupabaseClient) {
+export default function membersRouter(
+  upload: Multer,
+  supabase: SupabaseClient,
+) {
   const router = express.Router();
 
-/**
- * @api {post} /api/members/details Get a member's details
- * @apiName GetUserDetails
- * @apiGroup Member
- *
- * @apiParam {String} memberId Unique ID of the member.
- *
- * @apiSuccess {Object} member Full member object.
- * @apiError (Error 500) InternalServerError No memberId provided.
- */
-router.get('/details/:memberId', memberCtrl.getUserDetails);
+  /**
+   * @api {get} /api/members/details/:memberId Get a member's details
+   * @apiName GetUserDetails
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member's unique ID.
+   *
+   * @apiSuccess {Object} user Member object.
+   * @apiError (Error 400) BadRequest No memberId provided.
+   */
+  router.get("/details/:memberId", memberCtrl.getUserDetails);
 
+  /**
+   * @api {get} /api/members List all approved members
+   * @apiName ListAllApprovedMembers
+   * @apiGroup Member
+   *
+   * @apiSuccess {Object[]} user List of approved members.
+   */
+  router.get("/", memberCtrl.listAllApprovedMembers);
 
-/**
- * @api {get} /api/members/approved List all approved members
- * @apiName ListAllApprovedMembers
- * @apiGroup Member
- *
- * @apiSuccess {Object[]} members List of approved members.
- */
-router.get('/', memberCtrl.listAllApprovedMembers);
+  /**
+   * @api {post} /api/members Create a new member
+   * @apiName CreateAMember
+   * @apiGroup Member
+   *
+   * @apiBody {String} email Email of the member.
+   * @apiBody {String} name Full name of the member.
+   * @apiBody {String} password Member's password.
+   * @apiBody {String} passoutYear Graduation year.
+   *
+   * @apiSuccess {Object} user Created member object.
+   * @apiError (Error 402) ValidationError Required fields missing.
+   */
+  router.post("/", memberCtrl.createAMember);
 
+  /**
+   * @api {patch} /api/members/:memberId Update member information
+   * @apiName UpdateAMember
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   * @apiBody {Object} fields Fields to update.
+   *
+   * @apiSuccess {String} message Member updated successfully.
+   * @apiError (Error 400) BadRequest Invalid member ID.
+   */
+  router.patch("/:memberId", memberCtrl.updateAMember);
 
-/**
- * @api {post} /api/members Create a new member
- * @apiName CreateAMember
- * @apiGroup Member
- *
- * @apiParam (Request body) {String} email Member email.
- * @apiParam (Request body) {String} name Member full name.
- * @apiParam (Request body) {String} password Password.
- * @apiParam (Request body) {String} passoutYear Year of passing out.
- *
- * @apiSuccess {Object} user The created member.
- * @apiError (Error 402) ValidationError Required fields are missing.
- */
-router.post('/', memberCtrl.createAMember);
+  /**
+   * @api {get} /api/members/unapproved Get unapproved members
+   * @apiName GetUnapprovedMembers
+   * @apiGroup Member
+   *
+   * @apiSuccess {Object[]} unapprovedMembers List of unapproved members.
+   */
+  router.get("/unapproved", memberCtrl.getUnapprovedMembers);
 
-/**
- * @api {patch} /api/members Update member info
- * @apiName UpdateAMember
- * @apiGroup Member
- * @apiParam (Request params) {String} MemberId.
- * @apiParam (Request body) {Object} Member fields to update.
- *
- * @apiSuccess {Object} member Updated member object.
- * @apiError (Error 403) Forbidden Member not authorized.
- * @apiError (Error 500) InternalServerError Something went wrong.
- */
-router.patch('/:memberId', memberCtrl.updateAMember);
+  /**
+   * @api {patch} /api/members/approve/:memberId Approve/reject a member
+   * @apiName UpdateApprovalRequest
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   * @apiBody {Boolean} isApproved Approval status.
+   * @apiBody {String} adminId Admin who approved.
+   *
+   * @apiSuccess {Object} update Approval status updated.
+   * @apiError (Error 400) BadRequest Missing required fields.
+   */
+  router.patch("/approve/:memberId", memberCtrl.updateRequest);
 
-/**
- * @api {get} /api/members/unapproved List unapproved members
- * @apiName GetUnapprovedMembers
- * @apiGroup Member
- *
- * @apiSuccess {Object[]} members List of unapproved members.
- */
-router.get('/unapproved', memberCtrl.getUnapprovedMembers);
+  /**
+   * @api {get} /api/members/achievements/:memberId Get member's achievements
+   * @apiName GetUserAchievements
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   *
+   * @apiSuccess {Object[]} achievements List of achievements.
+   */
+  router.get("/achievements/:memberId", memberCtrl.getUserAchievements);
 
-/**
- * @api {patch} /api/members/approve Update approval request
- * @apiName UpdateApprovalRequest
- * @apiGroup Member
- *
- * @apiParam (Request body) {Boolean} isApproved Approval status.
- * @apiParam (Request body) {String} memberId Member ID.
- *
- * @apiSuccess {String} message Approval status updated.
- * @apiError (Error 500) ValidationError Missing memberId or status.
- */
-router.patch('/approve/:memberId', memberCtrl.updateRequest);
+  /**
+   * @api {get} /api/members/projects/:memberId Get member's projects
+   * @apiName GetUserProjects
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   *
+   * @apiSuccess {Object[]} projects List of projects.
+   */
+  router.get("/projects/:memberId", memberCtrl.getUserProjects);
 
-/**
- * @api {post} /api/members/achievements Get user achievements
- * @apiName GetUserAchievements
- * @apiGroup Member
- *
- * @apiParam (Request params) {String} memberId Member ID.
- *
- * @apiSuccess {Object[]} achievements List of achievements.
- * @apiError (Error 500) ValidationError No memberId provided.
- */
-router.get('/achievements/:memberId', memberCtrl.getUserAchievements);
+  /**
+   * @api {get} /api/members/interviews/:memberId Get member's interviews
+   * @apiName GetUserInterviews
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   *
+   * @apiSuccess {Object[]} interviews List of interviews.
+   */
+  router.get("/interviews/:memberId", memberCtrl.getUserInterviews);
 
-/**
- * @api {post} /api/members/projects Get user projects
- * @apiName GetUserProjects
- * @apiGroup Member
- *
- * @apiParam (Request params) {String} memberId Member ID.
- *
- * @apiSuccess {Object[]} projects List of projects.
- * @apiError (Error 500) ValidationError No memberId provided.
- */
-router.get('/projects/:memberId', memberCtrl.getUserProjects);
-
-/**
- * @api {post} /api/members/interviews Get user interviews
- * @apiName GetUserInterviews
- * @apiGroup Member
- *
- * @apiParam (Request params) {String} memberId Member ID.
- *
- * @apiSuccess {Object[]} interviews List of interviews.
- * @apiError (Error 500) ValidationError No memberId provided.
- */
-router.get('/interviews/:memberId', memberCtrl.getUserInterviews);
-
-/**
-   * @api {post} /api/v1/members/:memberId/photo Upload profile photo
+  /**
+   * @api {post} /api/members/photo/upload/:memberId Upload profile photo
    * @apiName UploadProfilePhoto
    * @apiGroup Member
    *
-   * @apiParam (URL Params) {String} memberId The ID of the member.
-   * @apiParam (FormData) {File} photo The profile picture file to upload.
+   * @apiParam (URL Params) {String} memberId Member ID.
+   * @apiBody {File} file Profile picture file.
    *
-   * @apiSuccess {String} url The public URL of the uploaded profile picture.
-   *
-   * @apiError (Error 400) BadRequest Missing or invalid file.
-   * @apiError (Error 404) NotFound Member not found.
-   * @apiError (Error 500) InternalServerError Failed to upload image.
+   * @apiSuccess {String} message Image uploaded successfully.
+   * @apiError (Error 400) BadRequest No file or invalid memberId.
    */
-  router.post('/photo/:memberId',
+  router.post(
+    "/photo/upload/:memberId",
     upload.single("file"),
-    injectSupabase(supabase, "member")
-
+    injectSupabase(supabase, "members", "update"),
   );
 
-    return router
+  /**
+   * @api {patch} /api/members/photo/update/:memberId Update profile photo
+   * @apiName UpdateProfilePhoto
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   * @apiBody {File} file New profile picture file.
+   *
+   * @apiSuccess {String} message Profile picture updated.
+   * @apiError (Error 400) BadRequest Missing or invalid file.
+   */
+  router.patch(
+    "/photo/update/:memberId",
+    upload.single("file"),
+    injectSupabase(supabase, "members", "update"),
+  );
+
+  /**
+   * @api {patch} /api/members/photo/delete/:memberId Delete profile photo
+   * @apiName DeleteProfilePhoto
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Member ID.
+   *
+   * @apiSuccess {String} message Profile picture deleted.
+   * @apiError (Error 400) BadRequest No profile picture found.
+   */
+  router.patch(
+    "/photo/delete/:memberId",
+    upload.single("file"),
+    injectSupabase(supabase, "members", "delete"),
+  );
+
+
+  return router;
 }
