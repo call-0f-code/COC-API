@@ -1,81 +1,12 @@
 import { Router } from 'express'
-import { Multer } from 'multer'
-import { SupabaseClient } from '@supabase/supabase-js'
-import {
-    addMembers,
-    createProject,
-    deleteProjects,
-    getMembersByProjectId,
-    getProjectById,
-    getProjects,
-    removeMembers,
-    updateProjects
-} from '../controllers/project.controller'
+import { getCompletedQuestion, toggleQuestions } from '../controllers/progress.controller'
 
-
-
-export default function projectsRouter(
-    upload: Multer,
-    supabase: SupabaseClient
-) {
+export default function progressRouter() {
     const router = Router()
 
-    //   Getting all User
-    router.get(
-        '/',
-        getProjects
-    )
+    router.get('/:memberId/completed-questions',getCompletedQuestion);
 
-    //  get Project by Id
-    router.get(
-        '/:projectId',
-        getProjectById
-    )
-
-    //  Create project
-    router.post(
-        '/',
-        createProject
-    )
-
-    //  Update Project
-    router.patch(
-        '/:projectId',
-        updateProjects
-    )
-
-    //  delete projects
-    router.delete(
-        '/:projectId',
-        deleteProjects
-    )
-
-    //  getMember by ProjectId
-
-    router.get(
-        '/:projectId/members',
-        getMembersByProjectId
-    )
-
-    //  add member to project
-    router.post(
-        '/:projectId/members',
-        addMembers
-    )
-
-    //  Remover the memnber
-    router.delete(
-        '/:projectId/members/:memberId',
-        removeMembers
-    )
-
-    // Photo upload endpoint:
-    //   router.post(
-    //     '/:projectId/photo',
-    //     upload.single('photo'),
-    //     (req, res, next) => memberCtrl.uploadPhoto(req, res, next, supabase)
-    //   )
-
+    router.patch('/:memeberId/questions/:questionId/completed/toggle',toggleQuestions);
 
     return router
 }

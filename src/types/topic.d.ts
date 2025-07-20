@@ -4,16 +4,18 @@ export {};
 
 declare global {
     interface questionData {
-        id?:number,
         questionName?:string,
         difficulty?:Difficulty,
         link?:string,
-        createdBy?:string,
+        updatedById?: string,
+        createdById?:string,
     }
     interface topicData {
         id?:number,
         title?:string,
-        description?:string
-        createdById?:string
+        description?:string,
+        updatedById?: string
+        createdById?:string,
+
     }
 }

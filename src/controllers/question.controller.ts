@@ -21,6 +21,7 @@ export const getQuestionByTopicId = async(req:Request,res:Response)=>{
 }
 
 export const addQuestion = async(req:Request,res:Response)=>{
+    
     const topicId = parseInt(req.params.topicId);
     const {questionName,difficulty,link} = req.body
     const adminId = req.body.adminId;
@@ -30,7 +31,7 @@ export const addQuestion = async(req:Request,res:Response)=>{
 
     try{
         const question = await questionServices.addQuestionByTopicId(adminId,topicId,link,difficulty,questionName);
-        res.status(200).json({
+        res.status(201).json({
             status:"SUCCESS",
             question
         })
@@ -61,17 +62,17 @@ export const getQuestionByQuestionId = async(req:Request,res:Response)=>{
 
 export const updateQuestion = async(req:Request,res:Response)=>{
     const questionId = parseInt(req.params.questionId);
-    // req.body.adminId -> req.body
+    
     const adminId = req.body.adminId;
-    const questionData:questionData = req.body;
-    questionData.id = questionId
-console.log(questionData + " " + adminId)
-    if(!questionData || adminId){
+    const questionData:questionData = req.body.questionData;
+    
+    if(!questionData ||JSON.stringify(questionData) === "{}" || !adminId ){
         throw new ApiError("required field missing",400);
     }
+    questionData.updatedById = adminId;
 
     try{
-        const question  = await questionServices.updateQuestion(questionData);
+        const question  = await questionServices.updateQuestion(questionData,questionId);
         res.status(200).json({
             status:"SUCCESS",
             question
@@ -82,7 +83,7 @@ console.log(questionData + " " + adminId)
 }
 
 export const deleteQuestion = async(req:Request , res:Response) =>{
-    const questionId = parseInt(req.body.questionId);
+    const questionId = parseInt(req.params.questionId);
     if(!questionId){
         throw new ApiError("required field missing ",400);
     }
@@ -97,35 +98,3 @@ export const deleteQuestion = async(req:Request , res:Response) =>{
     }
 }
 
-export const getCompletedQuestion = async(req:Request,res:Response)=>{
-    const memberId = req.params.memberId;
-    if(!memberId){
-        throw new ApiError("required field is missing",400);
-    }
-
-    try{
-        const completedQuestion = await questionServices.getCompletedQuestion(memberId);
-        res.status(200).json({
-            status:"SUCCESS",
-            completedQuestion
-        })
-    }catch(error){
-        throw new ApiError(error as string, 500);
-    }
-}
-
-export const toggleQuestions = async(req:Request,res:Response) =>{
-    const {memberId} = req.params;
-    const questionId = parseInt(req.params.questionId);
-    if(!memberId || !questionId){
-        throw new ApiError("required field is missing",400);
-    }
-    try{
-        await questionServices.markQuestion(questionId,memberId);
-        res.status(200).json({
-            status:"SUCCESS",
-        })
-    }catch(error){
-        throw new ApiError(error as string, 500);
-    }
-}

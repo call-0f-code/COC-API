@@ -14,48 +14,36 @@ export const getQuestionByTopicId = async(TopicId:number) =>{
 }
 
 export const getQuestionByQuestionId = async(questionId:number) =>{
-    try{
-        const question = await prisma.question.findUnique({
-            where: {id:questionId}
-        })
-        return question;
-    }catch(error){
-        throw new Error(error as string); 
-    }
+    
+    return await prisma.question.findUnique({
+        where: {id:questionId}
+    })
+        
+    
     
 }
-// refactor this logic with type logic
 export const addQuestionByTopicId = async(adminId:string,TopicId:number,link:string,difficulty:Difficulty,questionName:string)=>{
-    try{
-        const question = await prisma.question.create({
+    
+        return await prisma.question.create({
             data: {
                 questionName,
                 difficulty,
                 link,
                 topicId:TopicId,
                 createdById:adminId,
+                updatedById:adminId
             }
         })
-        return question
-    }catch(error){
-        throw new Error(error as string);
-    }
+        
 }
-// rembeer to add updatedBy field here 
-export const updateQuestion = async(questionData:questionData)=>{
-    try{
-        const question  = await prisma.question.update({
-            where: {id:questionData.id},
-            data:{
-                ...(questionData.questionName && {questionName:questionData.questionName}),
-                ...(questionData.difficulty && {difficulty:questionData.difficulty}),
-                ...(questionData.link && {link:questionData.link}),                                
-            }
+
+export const updateQuestion = async(questionData:questionData,questionId:number)=>{
+   
+        return await prisma.question.update({
+            where: {id:questionId},
+            data: questionData
         })
-        return question;
-    }catch(error){
-        throw new Error(error as string);
-    }
+    
 }
 
 export const deleteQuestion = async(questionId:number)=>{
@@ -69,44 +57,7 @@ export const deleteQuestion = async(questionId:number)=>{
     }
 }
 
-export const getCompletedQuestion = async(memeberId:string)=>{
-    return await prisma.completedQuestion.findMany({
-        where:{memberId:memeberId}
-    })
-}
 
-export const markQuestion = async(questionId:number,memberId:string)=>{
-   try{
-        const existing = await prisma.completedQuestion.findUnique({
-            where:{
-                memberId_questionId:{
-                    memberId,
-                    questionId
-                }
-                
-            }
-        })
-        if(existing){
-            return await prisma.completedQuestion.delete({
-                where:{
-                    memberId_questionId:{ 
-                        memberId:memberId,
-                        questionId:questionId
-                    }
-                }
-            })
-        }else{
-            return await prisma.completedQuestion.create({
-                data:{
-                    memberId,
-                    questionId
-                }
-            })
-        }
-   }catch(error){
-        throw new Error(error as string)
-   }
-}
 
 
 
