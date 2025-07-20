@@ -13,7 +13,7 @@ import path from 'path'
 
 // Initialize Supabase client for storage operations
 export const supabase = createClient(
-  config.SUPABSE_URL,
+  config.SUPABASE_URL,
   config.SUPABASE_SERVICE_ROLE_KEY
 )
 

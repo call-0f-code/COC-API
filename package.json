@@ -9,12 +9,12 @@
   "scripts": {
     "test": "jest",
     "apidoc": "apidoc -c apidoc.json",
-    "start" : "bun run src/server.ts",
+    "start": "bun src/server.ts",
     "lint": "eslint src/",
     "format": "prettier --write src/",
     "lint:fix": "eslint src/ --fix",
     "precommit": "lint-staged",
-    "migrate:first":"bunx prisma migrate dev --name init",
+    "migrate:first": "bunx prisma migrate dev --name init",
     "migrate": "bunx prisma migrate dev",
     "generate": "bunx prisma generate"
   },
@@ -63,9 +63,9 @@
     "husky": "^9.1.7",
     "jest": "^30.0.4",
     "multer": "^2.0.1",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
-    "uuid": "^11.1.0",
-    "ts-jest": "^29.4.0"
+    "uuid": "^11.1.0"
   },
   "private": true
 }
