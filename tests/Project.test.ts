@@ -3,6 +3,16 @@ import { createProject  , getProjectById , updateProjects , deleteProjects
 import * as projectService from '../src/services/project.service';
 import { ApiError } from '../src/utils/apiError';
 import { Response , Request} from 'express';
+import * as imageUtils from '../src/utils/imageUtils';
+
+
+jest.mock('../src/routes/projects', () => {
+  return {
+    __esModule: true,
+    default: jest.fn(() => require('express').Router()),
+  };
+});
+
 
 // modify the respose Object
 
@@ -13,44 +23,46 @@ import { Response , Request} from 'express';
     return res;
   };
 
-// test for create Project routes
+  // test for the createProject routes
 
 describe('createProjectHandler', () => {
-  const AdminId = "4037653b-a434-460f-8a81-ca8cb46375aa";
+  const adminId = '4037653b-a434-460f-8a81-ca8cb46375aa';
 
- 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
   it('should return 200 and created project with valid input', async () => {
     const req = {
-      body: {
-        name: 'EventHub',
-        githubUrl: 'https://github.com/example/eventhub',
-        deployUrl: 'https://eventhub.example.com',
-        AdminId,
+      body:{
+        projectData : {
+          name: 'EventHub',
+          githubUrl: 'https://github.com/example/eventhub',
+          deployUrl: 'https://eventhub.example.com',
+          adminId,
       },
-      file : {
-          name : "image"
-      }
-      
-    } as unknown as Request;
+    },
+      file: {
+        mimetype: 'image/png',
+        buffer: Buffer.from('fake-image-data'),
+      },
+    } as unknown as Request; 
 
     const res = mockRes();
 
     const mockProject = {
       id: 1,
       name: 'EventHub',
-      imageUrl: req.body.imageUrl,
-      githubUrl: req.body.githubUrl,
-      deployUrl: req.body.deployUrl,
-      createdById: AdminId,
+      imageUrl: 'https://fake-image-url.com/image.png',
+      githubUrl: req.body.projectData.githubUrl,
+      deployUrl: req.body.projectData.deployUrl,
+      createdById: adminId,
       createdAt: new Date(),
       updatedById: null,
       updatedAt: new Date(),
     };
 
-    jest
-      .spyOn(projectService, 'createProject')
-      .mockResolvedValue(mockProject);
+    jest.spyOn(projectService, 'createProject').mockResolvedValue(mockProject);
 
     await createProject(req, res);
 
@@ -58,35 +70,38 @@ describe('createProjectHandler', () => {
     expect(res.json).toHaveBeenCalledWith(mockProject);
   });
 
-  it('should throw an error if project name is missing', async () => {
-    const req: any = {
-      body: {
-        name: '', // Invalid input
-        imageUrl: 'https://example.com/image.png',
-        githubUrl: 'https://github.com/example/eventhub',
-        deployUrl: 'https://eventhub.example.com',
-         AdminId,
-      },
-     
-    };
+ it('should throw 400 if any required field is missing', async () => {
+  const req = {
+    body: {
+      projectData : {
+      githubUrl: 'https://github.com/example/eventhub',
+      deployUrl: 'https://eventhub.example.com',
+      adminId,
+      // name is missing
+    },
+  },
+    file: {
+      mimetype: 'image/png',
+      buffer: Buffer.from('fake-image-data'),
+    },
+  } as unknown as Request;
 
-    const res = mockRes();
+  const res = mockRes();
 
-    await expect(createProject(req, res)).rejects.toThrow(ApiError); // or a more specific message
-  });
+  await expect(createProject(req, res)).rejects.toThrow(ApiError);
+});
+
 });
 
 
 // test for get project based on projecId
 
 describe('getProjectByprojectId' , () => {
-   const AdminId = "4037653b-a434-460f-8a81-ca8cb46375aa";
-
-  
+   const adminId = "4037653b-a434-460f-8a81-ca8cb46375aa";
     
   it('should return 200 if project with Project Id exits', async () => {
     const req: any = {
-      body : {  AdminId },
+      body : {  adminId },
       params :{
           projectId : "1"
       } 
@@ -102,7 +117,7 @@ describe('getProjectByprojectId' , () => {
     deployUrl: "https://github.com/samrth07/Sportify",
     createdById: "4037653b-a434-460f-8a81-ca8cb46375aa",
     createdAt: new Date(),
-    updatedById: AdminId,
+    updatedById: adminId,
     updatedAt: new Date(),
 
     };
@@ -119,8 +134,9 @@ describe('getProjectByprojectId' , () => {
 
    it('should return 400 if projectID id not given ', async () => {
     const req: any = {
-      body : { AdminId },
+      body : { adminId },
       params :{
+      
       } 
     };
 
@@ -136,17 +152,19 @@ describe('getProjectByprojectId' , () => {
 // test for the project Update Route
 
 
-describe(' uodateProjectInfo ' , () => {
-   const AdminId = "4037653b-a434-460f-8a81-ca8cb46375aa";
+describe(' updateProjectInfo ' , () => {
+   const adminId = "4037653b-a434-460f-8a81-ca8cb46375aa";
 
    
     
   it('should return 200 if project with Project Id exits', async () => {
     const req: any = {
-      body : {  
-        name : "Sporify",
-        updatedById : "4037653b-a434-460f-8a81-ca8cb46375aa"
-       },
+      body : {
+        projectData :{  
+            name : "Sporify",
+            updatedById : "4037653b-a434-460f-8a81-ca8cb46375aa"
+          }
+        },
       params :{
           projectId : "1"
       } 
@@ -178,9 +196,11 @@ describe(' uodateProjectInfo ' , () => {
 
   it('should return 400 if updatedById is not given ', async () => {
       const req: any = {
-      body : {  
-        name : "Sporify",
-       },
+      body : {
+        projectData :{  
+            name : "Sporify"
+          }
+        },
       params :{
           projectId : "1"
       } 
@@ -193,13 +213,15 @@ describe(' uodateProjectInfo ' , () => {
 
    it('should return 400 if projectId is not given ', async () => {
       const req: any = {
-      body : {  
+      body : {
+        projectData : {  
         name : "Sporify",
         updatedById : "4037653b-a434-460f-8a81-ca8cb46375aa"
 
        },
+      },
       params :{
-         
+  
       } 
     };
 
@@ -265,7 +287,6 @@ describe(' deleteProjectRoutes ' , () => {
 // test for getMemberByprojectsId Routes
 
 describe(' getMembersByProjectId' , () => {
-   const AdminId = "4037653b-a434-460f-8a81-ca8cb46375aa";
 
   
     
@@ -297,7 +318,6 @@ describe(' getMembersByProjectId' , () => {
    it('should return 400 if projectID id not given ', async () => {
     const req: any = {
       params :{
-    
       } 
     };
 
@@ -385,17 +405,16 @@ describe(' addMembers ' , () => {
 // Test for removeMembers Routes
 
 
-describe(' removeMembers ' , () => {
+describe(' removeMembersFromProject ' , () => {
 
 
     
   it('should return 200 if member deleted ', async () => {
     const req: any = {
-      body : {
-        memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
-      },
+
       params :{
-          projectId : "1"
+          projectId : "1",
+          memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
       } 
     };
 
@@ -420,9 +439,7 @@ describe(' removeMembers ' , () => {
   it('should return 400 if memberId is empty ', async () => {
 
       const req: any = {
-        body :{
        
-        },
       params :{
         projectId : 1
       } 
@@ -437,11 +454,8 @@ describe(' removeMembers ' , () => {
   it('should return 400 if projectId is empty ', async () => {
 
       const req: any = {
-        body :{
-          memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
-        },
       params :{
-
+        memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
       } 
     };
 
