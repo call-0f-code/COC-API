@@ -12,8 +12,8 @@ import path from 'path'
 
 // Initialize Supabase client for storage operations
 export const supabase = createClient(
-  config.DIRECT_URL,
-  config.SUPABASE_ANON_KEY
+  config.SUPABASE_URL,
+  config.SUPABASE_SERVICE_ROLE_KEY
 )
 
 const app = express()
