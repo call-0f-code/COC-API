@@ -1,12 +1,13 @@
-import { describe } from 'node:test';
-import { createProject  , getProjectById , updateProjects , deleteProjects , getMembersByProjectId , addMembers , removeMembers} from '../src/controllers/project.controller';
+import { createProject  , getProjectById , updateProjects , deleteProjects
+   , getMembersByProjectId , addMembers , removeMembers} from '../src/controllers/project.controller';
 import * as projectService from '../src/services/project.service';
 import { ApiError } from '../src/utils/apiError';
+import { Response , Request} from 'express';
 
 // modify the respose Object
 
    const mockRes = () => {
-    const res: any = {};
+    const res = {} as Response;
     res.status = jest.fn().mockReturnValue(res);
     res.json = jest.fn().mockReturnValue(res);
     return res;
@@ -20,16 +21,18 @@ describe('createProjectHandler', () => {
  
 
   it('should return 200 and created project with valid input', async () => {
-    const req: any = {
+    const req = {
       body: {
         name: 'EventHub',
-        imageUrl: 'https://example.com/image.png',
         githubUrl: 'https://github.com/example/eventhub',
         deployUrl: 'https://eventhub.example.com',
         AdminId,
       },
+      file : {
+          name : "image"
+      }
       
-    };
+    } as unknown as Request;
 
     const res = mockRes();
 

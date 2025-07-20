@@ -2,6 +2,8 @@ import * as projectService from "../services/project.service";
 import { Request ,  Response } from "express";
 import { ApiError } from "../utils/apiError";
 import { error } from "console";
+import { uploadImage } from "../utils/imageUtils";
+import { supabase } from "../app"; 
 
 export const getProjects = async ( req : Request , res : Response ) => {
 
@@ -31,15 +33,27 @@ export const getProjectById = async ( req : Request , res : Response ) => {
 export const createProject = async ( req : Request , res : Response ) => {
 
         try {
-                    const projectContent = req.body;
-                    const AdminId = req.body.AdminId;
-                    if( projectContent.name.length === 0 || !projectContent.githubUrl || !AdminId || !projectContent.imageUrl) throw new ApiError( " Field is missing !!!" , 400);
+                const file = req.file;
+                if(!file) throw new ApiError('Image file is not find' , 400);
 
-                const project = await projectService.createProject(projectContent , AdminId);
-                res.status(200).json(project);
+                const imageUrl = await uploadImage( supabase , file , 'projects');
+
+                if(!imageUrl) throw new ApiError("Image url is missing" , 400);
+
+                    const projectContent = {
+                        name: req.body.projectData.project,
+                        imageUrl: imageUrl,
+                        githubUrl: req.body.projectData.githubUrl,
+                        deployUrl: req.body.projectData.deployUrl,
+                        AdminId: req.body.projectData.AdminId,
+                    };
+
+                const project = await projectService.createProject( projectContent );
+                res.status(200).json(project); 
 
         } catch (error) {
-                throw new ApiError( error as string , 500);
+                console.log(error);
+                throw new ApiError( error as string , 404);
         }
 };
 

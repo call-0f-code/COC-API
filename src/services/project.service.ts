@@ -16,7 +16,7 @@ export const getProjectById = async ( projectId : number ) => {
         })
 };
 
-export const createProject = async ( projectContent : projectContent  , AdminId : string) => {
+export const createProject = async ( projectContent : projectContent ) => {
 
     return await prisma.project.create({
         data : {
@@ -24,7 +24,7 @@ export const createProject = async ( projectContent : projectContent  , AdminId 
             imageUrl : projectContent.imageUrl,
             githubUrl : projectContent.githubUrl,
             deployUrl : projectContent.deployUrl,
-            createdById :  AdminId,
+            createdById :  projectContent.AdminId,
         },
     })
    };

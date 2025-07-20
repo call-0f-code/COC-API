@@ -8,7 +8,8 @@ declare global {
         name: string,
         imageUrl: string ,
         githubUrl: string,
-        deployUrl: string?
+        deployUrl: string?,
+        AdminId : string
     }
 
     type addMembersData = {

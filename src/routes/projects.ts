@@ -1,5 +1,5 @@
-import { Router } from 'express'
-import { Multer } from 'multer'
+import { NextFunction, Request, Response, Router } from 'express'
+import  { Multer }  from 'multer'
 import { SupabaseClient } from '@supabase/supabase-js'
 import {
     addMembers,
@@ -13,6 +13,18 @@ import {
 } from '../controllers/project.controller'
 
 
+function parseCreateProjectData(req : Request, res : Response  , next : NextFunction) {
+
+            if(req.body.projectData){
+                    try{
+                        const parse = JSON.parse(req.body.projectData);
+                        req.body = parse;
+                    }catch(e){
+                        return res.status(400).json({ message: 'Invalid JSON in projectData field' });
+                    }
+            }
+            next();
+}
 
 export default function projectsRouter(
     upload: Multer,
@@ -60,7 +72,7 @@ export default function projectsRouter(
      * @apiError { error 400}   some fields are missing 
      * @apiError { error 500}   error related to the db interaction
      */
-    router.post('/create', createProject )
+    router.post('/create', upload.single('image') , parseCreateProjectData , createProject )
 
     //  Update Project
         /**
@@ -150,12 +162,6 @@ export default function projectsRouter(
     
     router.delete( '/:projectId/members/:memberId', removeMembers)
 
-    // Photo upload endpoint:
-    //   router.post(
-    //     '/:projectId/photo',
-    //     upload.single('photo'),
-    //     (req, res, next) => memberCtrl.uploadPhoto(req, res, next, supabase)
-    //   )
 
 
     return router
