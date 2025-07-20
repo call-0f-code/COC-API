@@ -8,7 +8,7 @@ export const getTopics = async(req:Request,res:Response) => {
         const topics = await topicServices.getTopics();
         res.status(201).json(topics)
     }catch(error){
-        throw new ApiError("Topic Not Found",404);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 }
 
@@ -25,7 +25,7 @@ export const createTopic = async(req:Request,res:Response) =>{
         const topic = await topicServices.createTopics(title,description,adminId);
         res.status(201).json(topic);
     }catch(error){
-        throw new ApiError(error as string,500)
+        throw new ApiError((error as Error).message || "Internal Server Error", 500)
     }
 }
 
@@ -46,7 +46,7 @@ export const updateTopic = async(req:Request,res:Response) =>{
         const updatedTopic = await topicServices.updateTopic(topicId,updateData,adminId);
         res.status(200).json(updatedTopic)
     }catch(error){
-        throw new ApiError(error as string,500);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 
 }
@@ -62,7 +62,7 @@ export const deleteTopic = async(req:Request,res:Response)=>{
             status:"SUCCESS"
         })
     }catch(error){
-        throw new ApiError(error as string,500);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 }
 

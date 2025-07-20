@@ -4,6 +4,9 @@ import {getQuestionByTopicId,addQuestion,getQuestionByQuestionId,updateQuestion,
 import { Question } from "../src/generated/prisma";
 import { ApiError } from "../src/utils/apiError";
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 const mockResponse = () =>{
     const res = {} as Response;
@@ -23,6 +26,7 @@ const baseMockQuestion:Question = {
     updatedById:'1',
     updatedAt:new Date()
 }
+
 
 describe('get question by Id',()=>{
     it('should respond with 200 and get the question by Id',async()=>{

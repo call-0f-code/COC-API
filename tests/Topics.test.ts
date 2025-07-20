@@ -4,6 +4,9 @@ import * as topicServices from '../src/services/topic.service';
 import { ApiError } from '../src/utils/apiError';
 import { Topic } from '../src/generated/prisma';
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 const mockResponse = (): Response => {
   const res = {} as Response;
@@ -11,6 +14,7 @@ const mockResponse = (): Response => {
   res.json = jest.fn().mockReturnThis();
   return res;
 };
+
 
 const baseMockTopic: Topic = {
   id: 1,

@@ -17,7 +17,7 @@ export const getCompletedQuestion = async(req:Request,res:Response)=>{
 
 
     }catch(error){
-        throw new ApiError(error as string, 500);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 }
 
@@ -33,6 +33,6 @@ export const toggleQuestions = async(req:Request,res:Response) =>{
             status:"SUCCESS",
         })
     }catch(error){
-        throw new ApiError(error as string, 500);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 }

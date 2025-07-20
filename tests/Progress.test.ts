@@ -4,6 +4,10 @@ import { Request,Response } from 'express';
 import { CompletedQuestion } from '../src/generated/prisma';
 import { ApiError } from '../src/utils/apiError';
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 const mockResponse = () =>{
     const res = {} as Response;
     res.status = jest.fn().mockReturnThis();
@@ -15,6 +19,7 @@ const baseMockCompletedQuestion :CompletedQuestion = {
     questionId:1,
     memberId:"1"
 }
+
 
 describe("get coompleted questions for a member",()=>{
     it("should response with 200 and mark question completed for member",async()=>{

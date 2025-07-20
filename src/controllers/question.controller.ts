@@ -36,7 +36,7 @@ export const addQuestion = async(req:Request,res:Response)=>{
             question
         })
     }catch(error){
-        throw new ApiError(error as string ,500);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 
 }
@@ -54,7 +54,7 @@ export const getQuestionByQuestionId = async(req:Request,res:Response)=>{
             question
         })
     }catch(error){
-        throw new ApiError(error as string ,500)
+        throw new ApiError((error as Error).message || "Internal Server Error", 500)
     }
 
 }
@@ -78,7 +78,7 @@ export const updateQuestion = async(req:Request,res:Response)=>{
             question
         })
     }catch(error){
-        throw new ApiError(error as string ,500)
+        throw new ApiError((error as Error).message || "Internal Server Error", 500)
     }
 }
 
@@ -94,7 +94,7 @@ export const deleteQuestion = async(req:Request , res:Response) =>{
             status:"SUCCESS"
         })
     }catch(error){
-        throw new ApiError(error as string,500);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 }
 
