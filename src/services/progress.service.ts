@@ -3,7 +3,10 @@ import { prisma } from "../db/client"
 
 export const getCompletedQuestion = async(memeberId:string)=>{
     return await prisma.completedQuestion.findMany({
-        where:{memberId:memeberId}
+        where:{memberId:memeberId},
+        select:{
+            questionId:true
+        }
     })
 }
 

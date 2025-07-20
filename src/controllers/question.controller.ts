@@ -16,7 +16,7 @@ export const getQuestionByTopicId = async(req:Request,res:Response)=>{
             questions
         })
     }catch(error){
-        throw new ApiError(error as string);
+        throw new ApiError((error as Error).message || "Internal Server Error", 500);
     }
 }
 

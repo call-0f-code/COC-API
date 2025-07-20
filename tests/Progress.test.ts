@@ -31,13 +31,13 @@ describe("get coompleted questions for a member",()=>{
 
         const res = mockResponse();
 
-        const spy = jest.spyOn(progressServices,'getCompletedQuestion').mockResolvedValue([baseMockCompletedQuestion])
+        const spy = jest.spyOn(progressServices,'getCompletedQuestion').mockResolvedValue([{questionId:baseMockCompletedQuestion.questionId}]);
         await getCompletedQuestion(req,res);
         expect(spy).toHaveBeenCalledWith(req.params.memberId);
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
             status:"SUCCESS",
-            completedQuestion:[baseMockCompletedQuestion]
+            completedQuestion:[{questionId:baseMockCompletedQuestion.questionId}]
         })
     })
 
