@@ -6,9 +6,9 @@ declare global {
 
     type projectContent = {
         name: string,
-        imageUrl: string ?,
+        imageUrl: string ,
         githubUrl: string,
-        deployUrl: string?,
+        deployUrl: string?
     }
 
     type addMembersData = {
@@ -27,5 +27,7 @@ declare global {
             imageUrl  : string, 
             githubUrl : string, 
             deployUrl : string, 
+            updatedById : string
+
         }
 }

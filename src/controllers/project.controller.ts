@@ -17,6 +17,7 @@ export const getProjectById = async ( req : Request , res : Response ) => {
     
         try{
             const projectId = parseInt( req.params.projectId );
+
             if( !projectId ) throw new ApiError( " Field is missing !!!" , 400);
 
             const project = await projectService.getProjectById( projectId );
@@ -31,10 +32,10 @@ export const createProject = async ( req : Request , res : Response ) => {
 
         try {
                     const projectContent = req.body;
+                    const AdminId = req.body.AdminId;
+                    if( projectContent.name.length === 0 || !projectContent.githubUrl || !AdminId || !projectContent.imageUrl) throw new ApiError( " Field is missing !!!" , 400);
 
-                    if( !projectContent.name || !projectContent.githubUrl) throw new ApiError( " Field is missing !!!" , 400);
-
-                const project = await projectService.createProject(projectContent);
+                const project = await projectService.createProject(projectContent , AdminId);
                 res.status(200).json(project);
 
         } catch (error) {
@@ -47,7 +48,9 @@ export const updateProjects = async ( req : Request , res : Response ) => {
         try {
             const projectInfo = req.body;
             const projectId = parseInt(req.params.projectId);
-            if( !projectId ) throw new ApiError( " Send The project id " , 400);
+            const updatedById = req.body.updatedById;
+
+            if( !projectId || projectInfo.length === 0 || !updatedById) throw new ApiError( " Send The project id " , 400);
 
              const project = await projectService.updateProjects( projectInfo  , projectId );
              res.status(200).json(project)
@@ -76,7 +79,7 @@ export const deleteProjects = async ( req : Request , res : Response ) => {
 export const getMembersByProjectId = async ( req : Request , res : Response ) => {
 
     try {
-                const projectId = parseInt( req.params.ProjectId );
+                const projectId = parseInt( req.params.projectId );
                 if( !projectId ) throw new ApiError( " Project Id required !!! " , 400);  
 
                 const members = await projectService.getMembersByProjectId(projectId);
@@ -95,7 +98,7 @@ export const addMembers = async ( req : Request , res : Response ) => {
     try {
                 const  projectId = parseInt( req.params.projectId );
                 const memberData = req.body.memberId;
-                if( !projectId || memberData.length === 0) throw new ApiError(" field is missing " , 400);
+                if( !projectId || !memberData ||  memberData.length === 0) throw new ApiError(" field is missing " , 400);
 
                 const data  = memberData.map( (memberId: string) => ({
                 projectId,
@@ -118,6 +121,8 @@ export const removeMembers = async ( req : Request , res : Response ) => {
                 projectId : parseInt ( req.params.projectId ),
                 memberId :  req.body.memberId 
             }
+
+        if( !data.projectId || !data.memberId) throw new ApiError(' Field is missing !!!' , 400);
 
         const removedMember  = await projectService.removeMembers(data);
         res.status(200).json( removedMember );

@@ -6,11 +6,13 @@ import { createProject } from '../src/services/project.service';
 describe('createProject', () => {
   it('should create a new project and return it', async () => {
     // input for service 
+    const AdminId = "123-samarth"
     const projectInput = {
       name: 'EventHub',
       imageUrl: 'https://example.com/image.png',
       githubUrl: 'https://github.com/example/eventhub',
       deployUrl: 'https://eventhub.example.com',
+      createdById: "123-samarth",
     };
     //expected output from service 
     const mockCreatedProject: Project = {
@@ -19,7 +21,7 @@ describe('createProject', () => {
       imageUrl: 'https://example.com/image.png',
       githubUrl: 'https://github.com/example/eventhub',
       deployUrl: 'https://eventhub.example.com',
-      createdById: null,
+      createdById: "123-samarth",
       createdAt: new Date(),
       updatedById: null,
       updatedAt: new Date(),
@@ -29,7 +31,7 @@ describe('createProject', () => {
     prismaMock.project.create.mockResolvedValue(mockCreatedProject);
 
     // gets the result of the service 
-    const result = await createProject(projectInput);
+    const result = await createProject(projectInput , AdminId);
 
 
     expect(prismaMock.project.create).toHaveBeenCalledWith({
