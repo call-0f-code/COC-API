@@ -8,17 +8,12 @@ export const getCompletedQuestion = async(req:Request,res:Response)=>{
         throw new ApiError("required field is missing",400);
     }
 
-    try{
-        const completedQuestion = await progressServices.getCompletedQuestion(memberId);
-        res.status(200).json({
-            status:"SUCCESS",
-            completedQuestion
-        })
+    const completedQuestion = await progressServices.getCompletedQuestion(memberId);
+    res.status(200).json({
+        status:"SUCCESS",
+        completedQuestion
+    })
 
-
-    }catch(error){
-        throw new ApiError((error as Error).message || "Internal Server Error", 500);
-    }
 }
 
 export const toggleQuestions = async(req:Request,res:Response) =>{
@@ -27,12 +22,10 @@ export const toggleQuestions = async(req:Request,res:Response) =>{
     if(!memberId || !questionId){
         throw new ApiError("required field is missing",400);
     }
-    try{
-        await progressServices.markQuestion(questionId,memberId);
-        res.status(200).json({
-            status:"SUCCESS",
-        })
-    }catch(error){
-        throw new ApiError((error as Error).message || "Internal Server Error", 500);
-    }
+   
+    await progressServices.markQuestion(questionId,memberId);
+    res.status(200).json({
+        status:"SUCCESS",
+    })
+    
 }
