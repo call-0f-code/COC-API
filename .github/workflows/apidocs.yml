@@ -2,10 +2,10 @@ name: Generate & Publish API Docs
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'src/routes/**'
-      - 'apidoc.json'
+      - "src/routes/**"
+      - "apidoc.json"
 
 jobs:
   docs:

@@ -1,26 +1,25 @@
-import { Router } from 'express'
-import { Multer } from 'multer'
-import { SupabaseClient } from '@supabase/supabase-js'
+import { Router } from "express";
+import { Multer } from "multer";
+import { SupabaseClient } from "@supabase/supabase-js";
 
-import projectsRouter from './projects'
-import topicRouter from './topics'
-import quetionsRouter from './questions'
-import progressRouter from './progress'
+import projectsRouter from "./projects";
+import topicRouter from "./topics";
+import quetionsRouter from "./questions";
+import progressRouter from "./progress";
 
 export default function routes(upload: Multer, supabase: SupabaseClient) {
-  const router = Router()
+  const router = Router();
 
   // router.use('/members', membersRouter(upload, supabase))
-  router.use('/projects', projectsRouter(upload, supabase))
-  
-  router.use('/topics',topicRouter());
+  router.use("/projects", projectsRouter(upload, supabase));
 
-  router.use('/questions',quetionsRouter());
+  router.use("/topics", topicRouter());
 
-  router.use('/progress',progressRouter());
-  
+  router.use("/questions", quetionsRouter());
 
-  return router
+  router.use("/progress", progressRouter());
+
+  return router;
 }
 
 /*

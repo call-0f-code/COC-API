@@ -54,7 +54,7 @@ This repository contains the common Express.js API for the backends of our Codin
 │
 ├── tests/                   # integration and unit tests (Jest or Mocha)
 │   ├── members.test.ts
-│   └── ...  
+│   └── ...
 │
 ├── .env.example             # template for environment variables
 ├── package.json
@@ -65,7 +65,7 @@ This repository contains the common Express.js API for the backends of our Codin
 
 ### Prerequisite
 
-* Install [Bun](https://bun.sh/) on your machine.
+- Install [Bun](https://bun.sh/) on your machine.
 
 ### 1. Clone the repo
 
@@ -82,8 +82,8 @@ bun install
 
 ### 3. Configure environment
 
-* Copy `.env.example` to `.env`
-* Update `.env` with your Supabase/PostgreSQL connection URL and any other variables:
+- Copy `.env.example` to `.env`
+- Update `.env` with your Supabase/PostgreSQL connection URL and any other variables:
 
 ### 4. Initialize Prisma & Database
 
@@ -98,8 +98,8 @@ bun prisma generate
 bun run dev
 ```
 
-* By default, the server listens on `http://localhost:3000`
-* `app.ts` sets up your Express instance; `server.ts` starts the HTTP listener
+- By default, the server listens on `http://localhost:3000`
+- `app.ts` sets up your Express instance; `server.ts` starts the HTTP listener
 
 ### 6. Run tests
 
