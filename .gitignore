@@ -140,5 +140,5 @@ vite.config.ts.timestamp-*
 
 /src/generated/prisma
 
-# documentation file
+# documentation folder
 /doc/
