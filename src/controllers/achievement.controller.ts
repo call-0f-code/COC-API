@@ -1,5 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import * as achievementService from "../services/achievement.service";
+import { uploadImage } from "../utils/imageUtils";
+import { supabase } from "../app";
 import { ApiError } from "../utils/apiError";
 
 export const getAchievements = async (req: Request, res: Response) => {
@@ -36,43 +38,34 @@ export const getAchievementById = async (req: Request, res: Response) => {
   });
 };
 
-
-// export const createAchievement = async (req: Request, res: Response) => {
-//   const { title, achievedAt, imageUrl} = req.body;
-
-//   if (!title || !achievedAt ) {
-//     throw new ApiError("title, achievedAt, and adminId are required", 400);
-//   }
-
-//   const newAchievement = await achievementService.createAchievement({
-//     title,
-//     achievedAt,
-//     imageUrl,
-//   });
-
-//   res.status(201).json({
-//     success: true,
-//     data: newAchievement,
-//   });
-// };
-
-
 export const createAchievement = async (req: Request, res: Response) => {
-  const { title, achievedAt, imageUrl, memberIds } = req.body;
+  const file = req.file;
+  if (!file) {
+    throw new ApiError('Image file is not found', 400);
+  }
 
-  if (!title || !achievedAt) {
-    throw new ApiError("Title, achievedAt, and adminId are required", 400);
+  const imageUrl = await uploadImage(supabase, file, 'achievements');
+  if (!imageUrl) {
+    throw new ApiError('Image URL is missing', 400);
+  }
+
+  const { title, description, achievedAt, memberIds, createdById } = req.body.achievementData;
+
+  if (!title || !description || !achievedAt || !createdById) {
+    throw new ApiError('Title, description, achievedAt, and createdById are required', 400);
   }
 
   if (!Array.isArray(memberIds)) {
-    throw new ApiError("memberIds must be an array", 400);
+    throw new ApiError('memberIds must be an array', 400);
   }
 
   const achievement = await achievementService.createAchievement({
     title,
+    description,
     achievedAt,
     imageUrl,
     memberIds,
+    createdById,
   });
 
   res.status(201).json({
@@ -82,66 +75,68 @@ export const createAchievement = async (req: Request, res: Response) => {
 };
 
 
-// export const addMemberToAchievement = async (req: Request, res: Response) => {
-//   const achievementId = parseInt(req.params.achievementId);
-//   const { memberId } = req.body;
-
-//   if (!achievementId || isNaN(achievementId)) {
-//     throw new ApiError("Invalid achievement ID", 400);
-//   }
-
-//   if (!memberId) {
-//     throw new ApiError("Member ID is required", 400);
-//   }
-
-//   const newLink = await achievementService.addMemberToAchievement({
-//     achievementId,
-//     memberId,
-//   });
-
-//   res.status(201).json({
-//     success: true,
-//     data: newLink,
-//   });
-// };
-
-
 export const updateAchievementById = async (req: Request, res: Response) => {
   const achievementId = parseInt(req.params.achievementId);
-
   if (!achievementId || isNaN(achievementId)) {
     throw new ApiError("Invalid achievement ID", 400);
   }
 
-  const { title, achievedAt, imageUrl, memberIds } = req.body;
+  const file = req.file;
+  let imageUrl: string | undefined;
 
-  // if (!adminId) {
-  //   return next(new ApiError("Admin ID is required", 400));
-  // }
+  if (file) {
+    imageUrl = await uploadImage(supabase, file, 'achievements');
+  }
 
+  let achievementData = req.body.achievementData;
+  if (typeof achievementData === 'string') {
+    try {
+      achievementData = JSON.parse(achievementData);
+    } catch (e) {
+      throw new ApiError("Invalid JSON in achievementData field", 400);
+    }
+  }
 
-const existingAchievement = await achievementService.getAchievementById(achievementId);
+  const { title, description, achievedAt, updatedById, memberIds } = achievementData;
 
+  if (!updatedById) {
+    throw new ApiError("updatedById is required", 400);
+  }
+
+  if (
+    !title &&
+    !description &&
+    !achievedAt &&
+    !imageUrl &&
+    (!Array.isArray(memberIds) || memberIds.length === 0)
+  ) {
+    throw new ApiError("At least one field must be provided for update", 400);
+  }
+
+  const existingAchievement = await achievementService.getAchievementById(achievementId);
   if (!existingAchievement) {
     throw new ApiError("Achievement not found", 404);
   }
 
-  const updatedAchievement = await achievementService.updateAchievementById(achievementId, {
-    title,
-    achievedAt,
-    imageUrl,
-  });
+  if (imageUrl) {
+    achievementData.imageUrl = imageUrl;
+  }
+
+  const updatedAchievement = await achievementService.updateAchievementById(
+    achievementId,
+    achievementData
+  );
 
   if (Array.isArray(memberIds) && memberIds.length > 0) {
     await achievementService.addMembersToAchievement(achievementId, memberIds);
   }
-
 
   res.status(200).json({
     success: true,
     data: updatedAchievement,
   });
 };
+
 
 export const deleteAchievementById = async (req: Request, res: Response) => {
   const achievementId = parseInt(req.params.achievementId);
@@ -159,16 +154,16 @@ export const deleteAchievementById = async (req: Request, res: Response) => {
 };
 
 
-export const removeMemberFromAchievement = async (req: Request, res: Response, next: NextFunction) => {
+export const removeMemberFromAchievement = async (req: Request, res: Response) => {
   const achievementId = parseInt(req.params.achievementId);
-  const { memberId } = req.body;
+  const memberId = req.params.memberId;
 
   if (!achievementId || isNaN(achievementId)) {
-    return next(new ApiError("Invalid achievement ID", 400));
+    throw new ApiError("Invalid achievement ID", 400);
   }
 
   if (!memberId) {
-    return next(new ApiError("Member ID is required", 400));
+    throw new ApiError("Member ID is required", 400);
   }
 
   await achievementService.removeMemberFromAchievement(achievementId, memberId);
@@ -178,3 +173,4 @@ export const removeMemberFromAchievement = async (req: Request, res: Response, n
     message: "Member removed from achievement successfully",
   });
 };
+

@@ -1,5 +1,4 @@
 import { prisma } from "../db/client";
-// import { UpdateAchievementInput, CreateAchievementInput } from "../types/acheivement.types";
 
 export const getAchievements = async () => {
   return await prisma.achievement.findMany({
@@ -14,12 +13,19 @@ export const createAchievement = async (data: CreateAchievementInput) => {
   return await prisma.achievement.create({
     data: {
       title: data.title,
+      description: data.description,
       achievedAt: new Date(data.achievedAt),
       imageUrl: data.imageUrl,
+      createdById: data.createdById,
       members: {
-        create: data.memberIds.map((memberId) => ({
-          memberId,
-        })),
+        create: data.memberIds.map((memberId) => ({ memberId })),
+      },
+    },
+    include: {
+      members: {
+        select: {
+          memberId: true,
+        },
       },
     },
   });
@@ -29,11 +35,8 @@ export const createAchievement = async (data: CreateAchievementInput) => {
 export const getAchievementById = async (achievementId: number) => {
   return await prisma.achievement.findUnique({
     where: { id: achievementId },
-    select: {
-      id: true,
-      title: true,
-      achievedAt: true,
-      imageUrl: true,
+    include: {
+
       members: {
         select: {
           member: {
@@ -46,9 +49,23 @@ export const getAchievementById = async (achievementId: number) => {
           },
         },
       },
+
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      updatedBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   });
 };
+
 
 export const updateAchievementById = async (
   achievementId: number,
@@ -57,19 +74,18 @@ export const updateAchievementById = async (
     where: { id: achievementId },
     data: {
       ...updateContent,
-      // achievedAt: updateContent.achievedAt ? new Date(updateContent.achievedAt) : undefined,
+    },
+    include: {
+      updatedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
 };
-
-// export const addMemberToAchievement = async (data: { achievementId: number; memberId: string }) => {
-//   return await prisma.memberAchievement.create({
-//     data: {
-//       achievementId: data.achievementId,
-//       memberId: data.memberId,
-//     },
-//   });
-// };
 
 
 export const addMembersToAchievement = async (achievementId: number, memberIds: string[]) => {
