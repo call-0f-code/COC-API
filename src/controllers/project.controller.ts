@@ -1,26 +1,27 @@
 import * as projectService from "../services/project.service";
 import { Request ,  Response } from "express";
 import { ApiError } from "../utils/apiError";
-import { error } from "console";
 import { uploadImage } from "../utils/imageUtils";
 import { supabase } from "../app"; 
+
 
 export const getProjects = async ( req : Request , res : Response ) => {
 
         try {
                 const projects = await projectService.getProjects();
                 res.status(200).json(projects);
-        } catch (error) {
-                throw new ApiError( "No project found !!!" , 500)
+        } catch (error) {          
+           res.status(500).json({ error: "Failed to fetch projects" });
         }
 };
+
 
 export const getProjectById = async ( req : Request , res : Response ) => {
     
         try{
             const projectId = parseInt( req.params.projectId );
 
-            if( !projectId ) throw new ApiError( " Field is missing !!!" , 400);
+             if( isNaN(projectId) ) throw new ApiError( "Invalid project ID" , 400);
 
             const project = await projectService.getProjectById( projectId );
             res.status(200).json(project);
@@ -34,7 +35,7 @@ export const createProject = async ( req : Request , res : Response ) => {
 
         try {
                 const file = req.file;
-                if(!file) throw new ApiError('Image file is not find' , 400);
+                if(!file) throw new ApiError('Image file not found' , 400); 
 
                 const imageUrl = await uploadImage(supabase, file, 'projects');
 
@@ -54,7 +55,7 @@ export const createProject = async ( req : Request , res : Response ) => {
                 res.status(200).json(project); 
 
         } catch (error) {
-                throw new ApiError( error as string , 404);
+                throw new ApiError( error as string , 500);
         }
 };
 
