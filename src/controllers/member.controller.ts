@@ -122,6 +122,12 @@ export const uploadProfilePicture = async (
   if (!memberId) throw new ApiError("No memberId provided", 400);
   if (!req.file) throw new ApiError("No image file provided", 400);
 
+  const oldData = await memberService.getDetails(memberId);
+  const oldImage = oldData?.profilePhoto;
+
+  if(oldImage) {
+    memberService.deletePfp(memberId, oldImage);
+  }
 
     const imageUrl = await uploadImage(supabase, req.file, "members");
     await memberService.updateMember(memberId, { profilePhoto: imageUrl });
