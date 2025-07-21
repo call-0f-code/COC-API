@@ -19,6 +19,7 @@ export const getQuestionByTopicId = async (req: Request, res: Response) => {
 
 }
 
+
 export const addQuestion = async (req: Request, res: Response) => {
 
     const topicId = parseInt(req.params.topicId);
