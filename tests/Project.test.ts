@@ -1,29 +1,37 @@
 import { createProject  , getProjectById , updateProjects , deleteProjects
    , getMembersByProjectId , addMembers , removeMembers} from '../src/controllers/project.controller';
+   
 import * as projectService from '../src/services/project.service';
 import { ApiError } from '../src/utils/apiError';
 import { Response , Request} from 'express';
 import * as imageUtils from '../src/utils/imageUtils';
 
 
-jest.mock('../src/routes/projects', () => {
-  return {
-    __esModule: true,
-    default: jest.fn(() => require('express').Router()),
-  };
-});
+jest.mock('../src/app', () => ({
+  supabase: {
+    storage: {
+      from: jest.fn(() => ({
+        upload: jest.fn().mockResolvedValue({
+          data: { path: 'projects/image.png' },
+          error: null
+        }),
+      })),
+    },
+  },
+}));
 
+// Mock image upload utility
+jest.mock('../src/utils/imageUtils', () => ({
+  uploadImage: jest.fn().mockResolvedValue('https://fake-url.com/projects/image.png'),
+}));
 
-// modify the respose Object
-
-   const mockRes = () => {
-    const res = {} as Response;
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-  };
-
-  // test for the createProject routes
+// Reusable mock response object
+const mockRes = () => {
+  const res = {} as Response;
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
+  return res;
+};
 
 describe('createProjectHandler', () => {
   const adminId = '4037653b-a434-460f-8a81-ca8cb46375aa';
@@ -34,33 +42,34 @@ describe('createProjectHandler', () => {
 
   it('should return 200 and created project with valid input', async () => {
     const req = {
-      body:{
-        projectData : {
+      body: {
+        projectData: {
           name: 'EventHub',
           githubUrl: 'https://github.com/example/eventhub',
-          deployUrl: 'https://eventhub.example.com',
           adminId,
+        },
+        deployUrl: 'https://eventhub.example.com',
       },
-    },
       file: {
         mimetype: 'image/png',
         buffer: Buffer.from('fake-image-data'),
       },
-    } as unknown as Request; 
+    } as unknown as Request;
 
     const res = mockRes();
 
-    const mockProject = {
-      id: 1,
-      name: 'EventHub',
-      imageUrl: 'https://fake-image-url.com/image.png',
-      githubUrl: req.body.projectData.githubUrl,
-      deployUrl: req.body.projectData.deployUrl,
-      createdById: adminId,
-      createdAt: new Date(),
-      updatedById: null,
-      updatedAt: new Date(),
-    };
+ const mockProject = {
+  id: 1,
+  name: 'EventHub',
+  imageUrl: 'https://fake-image-url.com/image.png',
+  githubUrl: req.body.projectData.githubUrl,
+  deployUrl: req.body.projectData.deployUrl,
+  createdById: adminId,
+  createdAt: new Date(),
+  updatedById: null,
+  updatedAt: new Date(),
+};
+
 
     jest.spyOn(projectService, 'createProject').mockResolvedValue(mockProject);
 
@@ -70,29 +79,69 @@ describe('createProjectHandler', () => {
     expect(res.json).toHaveBeenCalledWith(mockProject);
   });
 
- it('should throw 400 if any required field is missing', async () => {
-  const req = {
-    body: {
-      projectData : {
-      githubUrl: 'https://github.com/example/eventhub',
-      deployUrl: 'https://eventhub.example.com',
-      adminId,
-      // name is missing
-    },
-  },
-    file: {
-      mimetype: 'image/png',
-      buffer: Buffer.from('fake-image-data'),
-    },
-  } as unknown as Request;
+  it('should throw ApiError if image file is missing', async () => {
+    const req = {
+      body: {
+        projectData: {
+          name: 'EventHub',
+          githubUrl: 'https://github.com/example/eventhub',
+          adminId,
+        },
+        deployUrl: 'https://eventhub.example.com',
+      },
+      file: undefined, // <-- No file
+    } as unknown as Request;
 
-  const res = mockRes();
+    const res = mockRes();
 
-  await expect(createProject(req, res)).rejects.toThrow(ApiError);
+    await expect(createProject(req, res)).rejects.toThrow(new ApiError('Image file not found', 400));
+  });
+
+  it('should throw ApiError if required project fields are missing', async () => {
+    const req = {
+      body: {
+        projectData: {
+          githubUrl: 'https://github.com/example/eventhub',
+          adminId,
+          // name is missing
+        },
+        deployUrl: 'https://eventhub.example.com',
+      },
+      file: {
+        mimetype: 'image/png',
+        buffer: Buffer.from('fake-image-data'),
+      },
+    } as unknown as Request;
+
+    const res = mockRes();
+
+    await expect(createProject(req, res)).rejects.toThrow(new ApiError(' fiels is missing ', 400));
+  });
+
+  it('should throw ApiError if imageUrl is missing from upload', async () => {
+    // Force uploadImage to return null
+    (imageUtils.uploadImage as jest.Mock).mockResolvedValueOnce(null);
+
+    const req = {
+      body: {
+        projectData: {
+          name: 'EventHub',
+          githubUrl: 'https://github.com/example/eventhub',
+          adminId,
+        },
+        deployUrl: 'https://eventhub.example.com',
+      },
+      file: {
+        mimetype: 'image/png',
+        buffer: Buffer.from('fake-image-data'),
+      },
+    } as unknown as Request;
+
+    const res = mockRes();
+
+    await expect(createProject(req, res)).rejects.toThrow(new ApiError('Image url is missing', 400));
+  });
 });
-
-});
-
 
 // test for get project based on projecId
 
@@ -340,7 +389,7 @@ describe(' addMembers ' , () => {
   it('should return 200 if member added ', async () => {
     const req: any = {
       body : {
-        memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
+        memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e" , "725f05b6-8053-4610-80c2-9e48c9d27b9e"]
       },
       params :{
           projectId : "1"
@@ -350,7 +399,7 @@ describe(' addMembers ' , () => {
     const res = mockRes();
 
     const mockBatchPayload = {
-  count: 1, // number of members added
+  count: 2, // number of members added
 };
 
 
@@ -385,7 +434,7 @@ describe(' addMembers ' , () => {
 
       const req: any = {
         body :{
-          memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
+          memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e" , "725f05b6-8053-4610-80c2-9e48c9d27b9r"]
         },
       params :{
        
@@ -414,7 +463,7 @@ describe(' removeMembersFromProject ' , () => {
 
       params :{
           projectId : "1",
-          memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
+          memberId : "725f05b6-8053-4610-80c2-9e48c9d27b9e"
       } 
     };
 
@@ -455,7 +504,7 @@ describe(' removeMembersFromProject ' , () => {
 
       const req: any = {
       params :{
-        memberId : ["725f05b6-8053-4610-80c2-9e48c9d27b9e"]
+        memberId : "725f05b6-8053-4610-80c2-9e48c9d27b9e"
       } 
     };
 
