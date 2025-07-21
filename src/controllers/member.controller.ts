@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
-import { uploadImage } from "../utils/imageUtils";
+import { deleteImage, uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 // List all approved members
@@ -61,6 +61,11 @@ export const updateAMember =
     const body = req.body;
 
     if (req.file) {
+      const oldData = await memberService.getDetails(memberId);
+      const oldImage = oldData?.profilePhoto;
+
+      if(oldImage) await deleteImage(supabase, oldImage);
+
       const imageUrl = await uploadImage(supabase, req.file, "members");
       body.profilePhoto = imageUrl;
     }
@@ -86,6 +91,8 @@ export const updateRequest = async (req: Request, res: Response) => {
   if (!memberId || !adminId || isApproved === undefined) {
     throw new ApiError("No essential creds provided", 400);
   }
+
+  if(!isApproved) throw new ApiError("Someone interrupting the backend flow", 400);
 
   const update = await memberService.approveRequest(
     isApproved,
