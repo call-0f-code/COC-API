@@ -1,81 +1,40 @@
 import { Router } from 'express'
-import { Multer } from 'multer'
-import { SupabaseClient } from '@supabase/supabase-js'
-import {
-    addMembers,
-    createProject,
-    deleteProjects,
-    getMembersByProjectId,
-    getProjectById,
-    getProjects,
-    removeMembers,
-    updateProjects
-} from '../controllers/project.controller'
+import { getCompletedQuestion, toggleQuestions } from '../controllers/progress.controller'
 
-
-
-export default function projectsRouter(
-    upload: Multer,
-    supabase: SupabaseClient
-) {
+export default function progressRouter() {
     const router = Router()
+    
+    /**
+     * @api {get} /progress/:memberId/completed-questions Get Completed Questions
+     * @apiName GetCompletedQuestions
+     * @apiGroup Progress
+     * 
+     * @apiParam {String} memberId ID of the member to retrieve completed questions for.
+     * 
+     * @apiSuccess {String="SUCCESS"} status Response status.
+     * @apiSuccess {Object[]} completedQuestion List of completed questions.
+     * @apiSuccess {Number} completedQuestion.questionId Id of the completed question.
+     * 
+     * @apiError (Error 400) BadRequest Missing required fields.
+     * @apiError (Error 500) InternalServerError Error while fetching completed questions.
+     * 
+     */
+    router.get('/:memberId/completed-questions',getCompletedQuestion);
 
-    //   Getting all User
-    router.get(
-        '/',
-        getProjects
-    )
-
-    //  get Project by Id
-    router.get(
-        '/:projectId',
-        getProjectById
-    )
-
-    //  Create project
-    router.post(
-        '/',
-        createProject
-    )
-
-    //  Update Project
-    router.patch(
-        '/:projectId',
-        updateProjects
-    )
-
-    //  delete projects
-    router.delete(
-        '/:projectId',
-        deleteProjects
-    )
-
-    //  getMember by ProjectId
-
-    router.get(
-        '/:projectId/members',
-        getMembersByProjectId
-    )
-
-    //  add member to project
-    router.post(
-        '/:projectId/members',
-        addMembers
-    )
-
-    //  Remover the memnber
-    router.delete(
-        '/:projectId/members/:memberId',
-        removeMembers
-    )
-
-    // Photo upload endpoint:
-    //   router.post(
-    //     '/:projectId/photo',
-    //     upload.single('photo'),
-    //     (req, res, next) => memberCtrl.uploadPhoto(req, res, next, supabase)
-    //   )
-
+    /**
+     * @api {patch} /progress/:memberId/questions/:questionId/completed/toggle Toggle Question Completion
+     * @apiName ToggleQuestionCompletion
+     * @apiGroup Progress
+     * 
+     * @apiParam {String} memberId ID of the member to toggle question completion for.
+     * @apiParam {Number} questionId ID of the question to toggle completion for.
+     * 
+     * @apiSuccess {String="SUCCESS"} status Response status.
+     * 
+     * @apiError (Error 400) BadRequest Missing required fields.
+     * @apiError (Error 500) InternalServerError Error while toggling question completion.
+     */
+    router.patch('/:memeberId/questions/:questionId/completed/toggle',toggleQuestions);
 
     return router
 }

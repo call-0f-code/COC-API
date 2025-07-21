@@ -7,18 +7,16 @@ import { supabase } from "../app";
 
 export const getProjects = async ( req : Request , res : Response ) => {
 
-        try {
+        
                 const projects = await projectService.getProjects();
                 res.status(200).json(projects);
-        } catch (error) {          
-           res.status(500).json({ error: "Failed to fetch projects" });
-        }
+        
 };
 
 
 export const getProjectById = async ( req : Request , res : Response ) => {
     
-        try{
+      
             const projectId = parseInt( req.params.projectId );
 
              if( isNaN(projectId) ) throw new ApiError( "Invalid project ID" , 400);
@@ -26,14 +24,12 @@ export const getProjectById = async ( req : Request , res : Response ) => {
             const project = await projectService.getProjectById( projectId );
             res.status(200).json(project);
 
-        }catch(error){
-                throw new ApiError("No project with this ID" , 500);
-        }
+        
 };
 
 export const createProject = async ( req : Request , res : Response ) => {
 
-        try {
+      
                 const file = req.file;
                 if(!file) throw new ApiError('Image file not found' , 400); 
 
@@ -54,14 +50,11 @@ export const createProject = async ( req : Request , res : Response ) => {
                 const project = await projectService.createProject( projectContent );
                 res.status(200).json(project); 
 
-        } catch (error) {
-                throw new ApiError( error as string , 500);
-        }
 };
 
 export const updateProjects = async ( req : Request , res : Response ) => {
 
-        try {
+       
             const projectInfo = req.body.projectData;
             const projectId = parseInt(req.params.projectId);
             const updatedById = projectInfo.updatedById;
@@ -83,47 +76,40 @@ export const updateProjects = async ( req : Request , res : Response ) => {
              const project = await projectService.updateProjects( projectInfo  , projectId );
              res.status(200).json(project)
 
-        } catch (error) {
-            throw new ApiError(error as string , 500);
-        }
+        
 }
 
 
 export const deleteProjects = async ( req : Request , res : Response ) => {
 
-    try {
+   
              const projectId = parseInt(req.params.projectId);
             if( !projectId ) throw new ApiError( " Send The project id " , 400);
 
             const deleted = await projectService.deleteProjects( projectId );
             res.status(200).json(deleted)
 
-    } catch (error) {
-            throw new ApiError( error as string , 500);
-    }
+   
         
 }
 
 export const getMembersByProjectId = async ( req : Request , res : Response ) => {
 
-    try {
+   
                 const projectId = parseInt( req.params.projectId );
                 if( !projectId ) throw new ApiError( " Project Id required !!! " , 400);  
 
                 const members = await projectService.getMembersByProjectId(projectId);
                 res.status(200).json(members)
 
-    } 
-    catch (error) {
-                     throw new ApiError( error as string , 500);
-    }
+    
 
     
 }
 
 export const addMembers = async ( req : Request , res : Response ) => {
 
-    try {
+   
                 const  projectId = parseInt( req.params.projectId );
                 const memberData = req.body.memberId;
                 if( !projectId || !memberData ||  memberData.length === 0) throw new ApiError(" field is missing " , 400);
@@ -136,15 +122,13 @@ export const addMembers = async ( req : Request , res : Response ) => {
              const member = await projectService.addMembers( data );
             res.status(200).json(member);
 
-    } catch (error) {
-          throw new ApiError( error as string , 500);
-    }
+    
 }
 
 
 export const removeMembers = async ( req : Request , res : Response ) => {
     
-        try {
+        
                 const data = {
                 projectId : parseInt ( req.params.projectId ),
                 memberId :  req.params.memberId 
@@ -155,8 +139,6 @@ export const removeMembers = async ( req : Request , res : Response ) => {
         const removedMember  = await projectService.removeMembers(data);
         res.status(200).json( removedMember );
 
-        } catch (error) {
-                 throw new ApiError( error as string , 500);
-        }
+        
 }
 
