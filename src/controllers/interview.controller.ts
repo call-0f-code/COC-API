@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import * as interviewService from "../services/interview.service";
 import { ApiError } from "../utils/apiError";
 
@@ -69,6 +69,10 @@ export const updateInterviewById = async (req: Request, res: Response) => {
 
   if (!memberId) {
     throw new ApiError("Member ID is required for verification", 400);
+  }
+
+  if(!company && !role && !verdict && !content && !isAnonymous){
+    throw new ApiError("Atleast one field is required for update", 400);
   }
 
   const existingInterview = await interviewService.getInterviewById(interviewId);

@@ -14,7 +14,7 @@ export default function routes(upload: Multer, supabase: SupabaseClient) {
   // router.use('/members', membersRouter(upload, supabase))
   router.use('/projects', projectsRouter(upload, supabase))
   // router.use('/projects', projectsRouter(upload, supabase))
-  router.use('/acheivements' ,acheivementsRouter(upload, supabase));
+  router.use('/achievements' ,acheivementsRouter(upload, supabase));
   router.use('/interviews', interviewRouter(upload, supabase));
   // … mount other routers, just write xyzRouter() if the routes in that router don't need multer or supabase
 
