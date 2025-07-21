@@ -15,4 +15,3 @@ export default function routes(upload: Multer, supabase: SupabaseClient) {
 
   return router;
 }
-

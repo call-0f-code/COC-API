@@ -1,9 +1,8 @@
 import express from "express";
 import * as memberCtrl from "../controllers/member.controller";
-import { supabase } from "../app";
 import { Multer } from "multer";
+import { supabase } from "../app";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { injectSupabase } from "../controllers/supabase.controller";
 
 export default function membersRouter(
   upload: Multer,
@@ -41,11 +40,44 @@ export default function membersRouter(
    * @apiBody {String} name Full name of the member.
    * @apiBody {String} password Member's password.
    * @apiBody {String} passoutYear Graduation year.
+   * @apiBody {String}  imageUrl profile photo of the member.
    *
    * @apiSuccess {Object} user Created member object.
    * @apiError (Error 402) ValidationError Required fields missing.
    */
-  router.post("/", memberCtrl.createAMember);
+  router.post("/", upload.single("file"), memberCtrl.createAMember(supabase));
+
+  /**
+   * @api {patch} /api/v1/members/:memberId Update a member
+   * @apiName UpdateAMember
+   * @apiGroup Member
+   *
+   * @apiParam {String} memberId Member's unique ID.
+   *
+   * @apiBody {File} [file] Profile photo file (field name: "file").
+   * @apiBody {String} [name] Full name of the member.
+   * @apiBody {String} [email] Email address.
+   * @apiBody {String} [phone] Phone number.
+   * @apiBody {String} [bio] Short bio.
+   * @apiBody {String} [github] GitHub handle.
+   * @apiBody {String} [linkedin] LinkedIn handle.
+   * @apiBody {String} [twitter] Twitter handle.
+   * @apiBody {String} [geeksforgeeks] GeeksforGeeks username.
+   * @apiBody {String} [leetcode] LeetCode username.
+   * @apiBody {String} [codechef] CodeChef username.
+   * @apiBody {String} [codeforces] Codeforces username.
+   * @apiBody {Date}   [passoutYear] Graduation year (ISO string format).
+   *
+   * @apiSuccess {Object} member Updated member object.
+   * @apiError (Error 404) NotFound Member not found.
+   * @apiError (Error 400) ValidationError Invalid or missing fields.
+   * @apiError (Error 500) ServerError Unexpected error occurred during update.
+   */
+  router.patch(
+    "/:memberId",
+    upload.single("file"),
+    memberCtrl.updateAMember(supabase),
+  );
 
   /**
    * @api {patch} /api/members/:memberId Update member information
@@ -56,9 +88,8 @@ export default function membersRouter(
    * @apiBody {Object} fields Fields to update.
    *
    * @apiSuccess {String} message Member updated successfully.
-   * @apiError (Error 400) BadRequest Invalid member ID.
-   */
-  router.patch("/:memberId", memberCtrl.updateAMember);
+   * @  router.patch("/:memberId", upload.single("file"), membe  router.patch("/:memberId", upload.single('file'), memberCtrl.updateAMember);
+;
 
   /**
    * @api {get} /api/members/unapproved Get unapproved members
@@ -115,57 +146,6 @@ export default function membersRouter(
    * @apiSuccess {Object[]} interviews List of interviews.
    */
   router.get("/interviews/:memberId", memberCtrl.getUserInterviews);
-
-  /**
-   * @api {post} /api/members/photo/upload/:memberId Upload profile photo
-   * @apiName UploadProfilePhoto
-   * @apiGroup Member
-   *
-   * @apiParam (URL Params) {String} memberId Member ID.
-   * @apiBody {File} file Profile picture file.
-   *
-   * @apiSuccess {String} message Image uploaded successfully.
-   * @apiError (Error 400) BadRequest No file or invalid memberId.
-   */
-  router.post(
-    "/photo/upload/:memberId",
-    upload.single("file"),
-    injectSupabase(supabase, "members", "update"),
-  );
-
-  /**
-   * @api {patch} /api/members/photo/update/:memberId Update profile photo
-   * @apiName UpdateProfilePhoto
-   * @apiGroup Member
-   *
-   * @apiParam (URL Params) {String} memberId Member ID.
-   * @apiBody {File} file New profile picture file.
-   *
-   * @apiSuccess {String} message Profile picture updated.
-   * @apiError (Error 400) BadRequest Missing or invalid file.
-   */
-  router.patch(
-    "/photo/update/:memberId",
-    upload.single("file"),
-    injectSupabase(supabase, "members", "update"),
-  );
-
-  /**
-   * @api {patch} /api/members/photo/delete/:memberId Delete profile photo
-   * @apiName DeleteProfilePhoto
-   * @apiGroup Member
-   *
-   * @apiParam (URL Params) {String} memberId Member ID.
-   *
-   * @apiSuccess {String} message Profile picture deleted.
-   * @apiError (Error 400) BadRequest No profile picture found.
-   */
-  router.patch(
-    "/photo/delete/:memberId",
-    upload.single("file"),
-    injectSupabase(supabase, "members", "delete"),
-  );
-
 
   return router;
 }

@@ -11,5 +11,5 @@ export interface UpdateMemberPayload {
   codechef?: string;
   codeforces?: string;
   isApproved?: boolean;
-  approvedBy?: string
+  approvedBy?: string;
 }

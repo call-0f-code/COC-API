@@ -2,7 +2,6 @@ import { prisma } from "../db/client";
 import { ApiError } from "../utils/apiError";
 import { UpdateMemberPayload } from "../types/members";
 
-
 export const checkAdmin = async (adminId: string) => {
   return await prisma.member.findUnique({
     where: {
@@ -33,12 +32,14 @@ export const createMember = async (
   name: string,
   password: string,
   passoutYear: number,
+  imageUrl?: string,
 ) => {
   const newMember = await prisma.member.create({
     data: {
       email: email,
       name: name,
       passoutYear: new Date(passoutYear),
+      profilePhoto: imageUrl,
     },
   });
 
@@ -74,9 +75,10 @@ export const updateMember = async (
     Object.entries(rest).filter(([_, v]) => v !== undefined),
   );
 
-  if(JSON.stringify(dataToUpdate) === '{}') throw new ApiError("No fields passed", 400)
+  if (JSON.stringify(dataToUpdate) === "{}")
+    throw new ApiError("No fields passed", 400);
 
-  return await prisma.member.updateMany({
+  return await prisma.member.update({
     where: { id },
     data: dataToUpdate,
   });
@@ -93,15 +95,11 @@ export const approveRequest = async (
   adminId: string,
   memberId: string,
 ) => {
-  const admin = await checkAdmin(adminId);
-  console.log(admin);
-
-  if (!admin) throw new ApiError("Forbidden access", 403);
-
   return await prisma.member.update({
     where: { id: memberId },
     data: {
-      isApproved: isApproved,
+      isApproved,
+      approvedBy: { connect: { id: adminId } },
     },
   });
 };
@@ -135,16 +133,3 @@ export const getInterviews = async (id: string) => {
     where: { memberId: id },
   });
 };
-
-
-export const deletePfp = async(id: string, image: string) => {
-  return await prisma.member.update({
-   where: { id },
-    data: {
-      profilePhoto: null,
-    },
-    select: {
-      profilePhoto: true,
-    },
-  })
-}

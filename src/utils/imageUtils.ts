@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 import { ApiError } from "./apiError";
+import supabase from "../app";
 
 type MulterFile = Express.Multer.File;
 
