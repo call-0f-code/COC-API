@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Router } from 'express'
 import { Multer } from 'multer'
 import { SupabaseClient } from '@supabase/supabase-js'
@@ -8,22 +7,12 @@ import interviewRouter from './interviews'
 import topicRouter from './topics'
 import quetionsRouter from './questions'
 import progressRouter from './progress'
-=======
-import { Router } from "express";
-import { Multer } from "multer";
-import { SupabaseClient } from "@supabase/supabase-js";
-
-import projectsRouter from "./projects";
-import topicRouter from "./topics";
-import quetionsRouter from "./questions";
-import progressRouter from "./progress";
->>>>>>> 72d34082b0d53e4409b1c9e31ec1e620b1dd4189
 
 export default function routes(upload: Multer, supabase: SupabaseClient) {
   const router = Router();
 
   // router.use('/members', membersRouter(upload, supabase))
-<<<<<<< HEAD
+
   router.use('/projects', projectsRouter(upload, supabase))
   // router.use('/projects', projectsRouter(upload, supabase))
   router.use('/achievements' ,acheivementsRouter(upload, supabase));
@@ -31,9 +20,8 @@ export default function routes(upload: Multer, supabase: SupabaseClient) {
   // … mount other routers, just write xyzRouter() if the routes in that router don't need multer or supabase
   
   router.use('/topics',topicRouter());
-=======
+
   router.use("/projects", projectsRouter(upload, supabase));
->>>>>>> 72d34082b0d53e4409b1c9e31ec1e620b1dd4189
 
   router.use("/topics", topicRouter());
 
