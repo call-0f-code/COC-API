@@ -30,6 +30,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+        
+      - name: Generate Prisma client
+        run: bun run generate
 
       - name: Run tests
         run: bun jest
