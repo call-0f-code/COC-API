@@ -17,8 +17,7 @@ jobs:
         run: npm install --no-save apidoc
 
       - name: Generate docs
-        run: npx apidoc -c apidoc.json
-
+        run: npx apidoc -c apidoc.json -o docs/apidoc
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
