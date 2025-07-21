@@ -187,43 +187,6 @@ describe('getAchievements', () => {
 });
 
 
-describe('getAchievements', () => {
-  it('should return 200 and all achievements', async () => {
-    const req: any = {};
-
-    const res: any = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
-
-    const mockAchievements = [
-      {
-        id: 1,
-        title: 'Maze Master',
-        description: 'Completed the final maze',
-        achievedAt: new Date('2025-07-19T10:00:00.000Z'),
-        imageUrl: 'https://example.com/maze.png',
-        createdById: 'admin_123',
-        createdAt: new Date(),
-        updatedById: null,
-        updatedAt: new Date(),
-      },
-    ];
-
-    jest.spyOn(achievementService, 'getAchievements').mockResolvedValue(mockAchievements);
-
-    await getAchievements(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      success: true,
-      count: mockAchievements.length, 
-      data: mockAchievements,
-    });
-  });
-});
-
-
 describe('getAchievementById', () => {
   it('should return 200 and the achievement with given ID', async () => {
     const req: any = {

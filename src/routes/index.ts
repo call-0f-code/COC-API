@@ -11,13 +11,13 @@ import progressRouter from './progress'
 export default function routes(upload: Multer, supabase: SupabaseClient) {
   const router = Router();
 
-  // router.use('/members', membersRouter(upload, supabase))
 
   router.use('/projects', projectsRouter(upload, supabase))
-  // router.use('/projects', projectsRouter(upload, supabase))
+
   router.use('/achievements' ,acheivementsRouter(upload, supabase));
+  
   router.use('/interviews', interviewRouter(upload, supabase));
-  // … mount other routers, just write xyzRouter() if the routes in that router don't need multer or supabase
+ 
   
   router.use('/topics',topicRouter());
 

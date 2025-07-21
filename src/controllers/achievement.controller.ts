@@ -7,10 +7,6 @@ import { ApiError } from "../utils/apiError";
 export const getAchievements = async (req: Request, res: Response) => {
   const achievements = await achievementService.getAchievements();
 
-  if (!achievements || achievements.length === 0) {
-    throw new ApiError("No achievements found", 404);
-  }
-
   res.status(200).json({
     success: true,
     count: achievements.length,
