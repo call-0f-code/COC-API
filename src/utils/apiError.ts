@@ -1,19 +1,19 @@
 // src/utils/apiError.ts
-import { Request, Response, NextFunction } from 'express'
+import { Request, Response, NextFunction } from "express";
 
 /**
  * A custom error type that carries an HTTP status code.
  */
 export class ApiError extends Error {
-  public statusCode: number
-  public isOperational: boolean
+  public statusCode: number;
+  public isOperational: boolean;
 
   constructor(message: string, statusCode = 500, isOperational = true) {
-    super(message)
-    this.name = this.constructor.name
-    this.statusCode = statusCode
-    this.isOperational = isOperational
-    Error.captureStackTrace(this, this.constructor)
+    super(message);
+    this.name = this.constructor.name;
+    this.statusCode = statusCode;
+    this.isOperational = isOperational;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -21,9 +21,9 @@ export class ApiError extends Error {
  * Standard structure for API error responses
  */
 interface ErrorResponse {
-  error: boolean
-  message: string
-  stack?: string
+  error: boolean;
+  message: string;
+  stack?: string;
 }
 
 /**
@@ -33,20 +33,21 @@ export function errorHandler(
   err: unknown,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
-  const status = err instanceof ApiError ? err.statusCode : 500
-  const message = err instanceof ApiError ? err.message : 'Internal Server Error'
+  const status = err instanceof ApiError ? err.statusCode : 500;
+  const message =
+    err instanceof ApiError ? err.message : "Internal Server Error";
 
   const responseBody: ErrorResponse = {
     error: true,
     message,
-  }
+  };
 
   // Include stack trace in development for debugging
-  if (process.env.NODE_ENV === 'development' && err instanceof Error) {
-    responseBody.stack = err.stack
+  if (process.env.NODE_ENV === "development" && err instanceof Error) {
+    responseBody.stack = err.stack;
   }
 
-  res.status(status).json(responseBody)
+  res.status(status).json(responseBody);
 }
