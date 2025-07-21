@@ -13,11 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install apidoc
-        run: npm install --no-save apidoc
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install apidoc with Bun
+        run: bun install --no-save apidoc
 
       - name: Generate docs
-        run: npx apidoc -c apidoc.json -o docs/apidoc
+        run: bunx apidoc -c apidoc.json -o docs/apidoc
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
