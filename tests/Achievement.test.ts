@@ -3,6 +3,18 @@ import * as achievementService from '../src/services/achievement.service';
 import { uploadImage } from '../src/utils/imageUtils';
 import { ApiError } from '../src/utils/apiError';
 
+jest.mock('../src/app', () => ({
+  supabase: {
+    storage: {
+      from: jest.fn(() => ({
+        upload: jest.fn().mockResolvedValue({ data: { path: 'fake-path' }, error: null }),
+        remove: jest.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    },
+  },
+}));
+
+
 jest.mock('../src/routes/achievements', () => {
   return {
     __esModule: true,

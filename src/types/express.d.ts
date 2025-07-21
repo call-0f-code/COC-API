@@ -1,7 +1,7 @@
 // src/types/express.d.ts
-import 'express';
-import { File as MulterFile } from 'multer';
-import { SupabaseClient } from '@supabase/supabase-js';
+import "express";
+import { File as MulterFile } from "multer";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 declare global {
   namespace Express {
@@ -23,5 +23,4 @@ declare global {
       
     }
   }
-
 }
