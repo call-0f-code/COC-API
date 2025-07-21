@@ -1,6 +1,6 @@
 import { prisma } from "../db/client";
 
-export const getPrjects = async () => {
+export const getProjects = async () => {
   return await prisma.project.findMany({});
 };
 

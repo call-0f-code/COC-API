@@ -6,7 +6,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
-  const user = await memberService.approvedMembers;
+  const user = await memberService.approvedMembers();
   res
     .status(200)
     .json({ user, success: true, message: "Fetched approved users" });
@@ -55,6 +55,9 @@ export const createAMember =
 export const updateAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
     const { memberId } = req.params;
+
+    if(!memberId) throw new ApiError("No memberId provided", 402);
+
     const body = req.body;
 
     if (req.file) {
