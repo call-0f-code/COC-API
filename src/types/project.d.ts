@@ -1,6 +1,5 @@
-
-import 'express';
-export { }
+import "express";
+export {};
 
 declare global {
 
@@ -12,15 +11,15 @@ declare global {
         AdminId : string
     }
 
-    type addMembersData = {
-        memberId: string,
-        projectId: number,
-    }
+  type addMembersData = {
+    memberId: string;
+    projectId: number;
+  };
 
-    type removedMemberData = {
-        memberId: string,
-        projectId: number,
-    }
+  type removedMemberData = {
+    memberId: string;
+    projectId: number;
+  };
 
     interface updateContent {
             id        : number,                 

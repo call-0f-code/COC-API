@@ -28,10 +28,10 @@ function parseCreateProjectData(req : Request, res : Response  , next : NextFunc
 }
 
 export default function projectsRouter(
-    upload: Multer,
-    supabase: SupabaseClient
+  upload: Multer,
+  supabase: SupabaseClient,
 ) {
-    const router = Router()
+  const router = Router();
 
     //   Get all User
 /**
@@ -194,7 +194,5 @@ export default function projectsRouter(
     router.delete( '/:projectId/members/:memberId', removeMembers)
 
 
-
-    return router
-    
+  return router;
 }

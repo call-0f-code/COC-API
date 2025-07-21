@@ -1,19 +1,15 @@
 import { prisma } from "../db/client";
 
-
 export const getProjects = async () => {
-        return await prisma.project.findMany({})
+  return await prisma.project.findMany({});
 };
 
-
-
-export const getProjectById = async ( projectId : number ) => {
-
-        return await prisma.project.findUniqueOrThrow({
-            where : {
-                id : projectId
-            }
-        })
+export const getProjectById = async (projectId: number) => {
+  return await prisma.project.findFirst({
+    where: {
+      id: projectId,
+    },
+  });
 };
 
 export const createProject = async ( projectContent : projectContent ) => {
@@ -29,34 +25,31 @@ export const createProject = async ( projectContent : projectContent ) => {
     })
    };
 
-export const updateProjects = async (  payload : updateContent , projectId : number ) => {
-    
-    const data = payload;
-    return await prisma.project.update({
-        where : {
-            id : projectId,
-        },
-        data,
-    })
-}
+export const updateProjects = async (payload: updateContent,  projectId: number ) => {
+  const data = payload;
+  return await prisma.project.update({
+    where: {
+      id: projectId,
+    },
+    data,
+  });
+};
 
-export const deleteProjects = async ( projectId : number ) => {
+export const deleteProjects = async (projectId: number) => {
+  return await prisma.project.delete({
+    where: {
+      id: projectId,
+    },
+  });
+};
 
-        return await prisma.project.delete({
-            where : {
-                id : projectId
-            }
-        })
-}
-
-export const getMembersByProjectId = async ( projectId : number ) => {
-
-    return await prisma.memberProject.findMany({
-        where : {
-            projectId,
-        }
-    })
-}
+export const getMembersByProjectId = async (projectId: number) => {
+  return await prisma.memberProject.findMany({
+    where: {
+      projectId,
+    },
+  });
+};
 
 export const addMembers = async ( addMembersData : addMembersData ) => {
 
@@ -67,16 +60,13 @@ export const addMembers = async ( addMembersData : addMembersData ) => {
 }
 
 
-export const removeMembers = async ( removedMemberData : removedMemberData ) => {
-
-    return await prisma.memberProject.delete({
-        where : {
-            memberId_projectId : {
-                    projectId : removedMemberData.projectId,
-                    memberId: removedMemberData.memberId
-            }
-            
-        }
-    })
-}
-
+export const removeMembers = async (removedMemberData: removedMemberData) => {
+  return await prisma.memberProject.delete({
+    where: {
+      memberId_projectId: {
+        projectId: removedMemberData.projectId,
+        memberId: removedMemberData.memberId,
+      },
+    },
+  });
+};
