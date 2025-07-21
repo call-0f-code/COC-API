@@ -83,7 +83,7 @@ export const updateRequest = async (req: Request, res: Response) => {
   const { memberId } = req.params;
   const { isApproved, adminId } = req.body;
 
-  if (!memberId || !adminId || isApproved === "undefined") {
+  if (!memberId || !adminId || isApproved === undefined) {
     throw new ApiError("No essential creds provided", 400);
   }
 

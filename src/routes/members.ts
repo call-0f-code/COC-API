@@ -80,18 +80,6 @@ export default function membersRouter(
   );
 
   /**
-   * @api {patch} /api/members/:memberId Update member information
-   * @apiName UpdateAMember
-   * @apiGroup Member
-   *
-   * @apiParam (URL Params) {String} memberId Member ID.
-   * @apiBody {Object} fields Fields to update.
-   *
-   * @apiSuccess {String} message Member updated successfully.
-   * @  router.patch("/:memberId", upload.single("file"), membe  router.patch("/:memberId", upload.single('file'), memberCtrl.updateAMember);
-;
-
-  /**
    * @api {get} /api/members/unapproved Get unapproved members
    * @apiName GetUnapprovedMembers
    * @apiGroup Member
