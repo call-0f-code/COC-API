@@ -47,8 +47,6 @@ app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });
 });
 
-app.use("/docs", express.static(path.resolve("docs/apidoc")));
-
 // 6) Global error handler
 app.use(errorHandler);
 

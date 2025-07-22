@@ -87,17 +87,18 @@ model MemberAchievement {
 }
 
 model Project {
-  id          Int             @id @default(autoincrement())
-  name        String
-  imageUrl    String?
-  githubUrl   String?
-  deployUrl   String?
-  createdAt   DateTime        @default(now())
+  id        Int     @id @default(autoincrement())
+  name      String
+  imageUrl  String
+  githubUrl String
+  deployUrl String?
+
+  // Audit fields
+  createdBy   Member?  @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdById String?
   updatedAt   DateTime        @updatedAt
   updatedById String?
   members     MemberProject[]
-  createdBy   Member?         @relation("ProjectCreatedBy", fields: [createdById], references: [id])
   updatedBy   Member?         @relation("ProjectUpdatedBy", fields: [updatedById], references: [id])
 }
 

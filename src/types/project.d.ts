@@ -9,6 +9,14 @@ declare global {
     deployUrl: string;
   };
 
+    type projectContent = {
+        name: string,
+        imageUrl: string ,
+        githubUrl: string,
+        deployUrl: string?,
+        AdminId : string
+    }
+
   type addMembersData = {
     memberId: string;
     projectId: number;
@@ -19,11 +27,13 @@ declare global {
     projectId: number;
   };
 
-  interface updateContent {
-    id: number;
-    name: string;
-    imageUrl: string;
-    githubUrl: string;
-    deployUrl: string;
-  }
+    interface updateContent {
+            id        : number,                 
+            name      : string,
+            imageUrl  : string, 
+            githubUrl : string, 
+            deployUrl : string, 
+            updatedById : string
+
+        }
 }
