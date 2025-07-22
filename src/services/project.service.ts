@@ -12,7 +12,7 @@ export const getProjectById = async (projectId: number) => {
   });
 };
 
-export const createProject = async (projectContent: projectContent) => {
+export const createProject = async ( projectContent : projectContent ) => {
 
     return await prisma.project.create({
         data : {
@@ -20,7 +20,7 @@ export const createProject = async (projectContent: projectContent) => {
             imageUrl : projectContent.imageUrl,
             githubUrl : projectContent.githubUrl,
             deployUrl : projectContent.deployUrl,
-            //createdById :  projectContent.adminId,
+            createdById :  projectContent.AdminId,
         },
     })
    };

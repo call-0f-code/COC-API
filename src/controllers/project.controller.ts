@@ -28,6 +28,8 @@ export const getProjectById = async (req: Request, res: Response) => {
 };
 
 export const createProject = async (req: Request, res: Response) => {
+
+
   const file = req.file;
   if (!file) throw new ApiError('Image file not found', 400);
 
@@ -42,7 +44,7 @@ export const createProject = async (req: Request, res: Response) => {
     imageUrl: imageUrl,
     githubUrl: req.body.projectData.githubUrl,
     deployUrl: req.body.deployUrl,
-    createdById: req.body.projectData.adminId,
+    AdminId: req.body.projectData.adminId,
   };
 
   const project = await projectService.createProject(projectContent);
@@ -77,19 +79,6 @@ export const updateProjects = async (req: Request, res: Response) => {
 
 }
 
-export const getMembersByProjectId = async (req: Request, res: Response) => {
-  try {
-    const projectId = parseInt(req.params.ProjectId);
-
-    if (!projectId) throw new ApiError(" Project Id required !!! ", 401);
-
-    const members = await projectService.getMembersByProjectId(projectId);
-    res.json(members);
-  } catch (error) {
-    throw new ApiError(error as string, 404);
-  }
-};
-
 
 export const deleteProjects = async (req: Request, res: Response) => {
 
@@ -99,9 +88,28 @@ export const deleteProjects = async (req: Request, res: Response) => {
 
   const deleted = await projectService.deleteProjects(projectId);
   res.status(200).json(deleted)
+
+
+
+}
+
+export const getMembersByProjectId = async (req: Request, res: Response) => {
+
+
+  const projectId = parseInt(req.params.projectId);
+  if (!projectId) throw new ApiError(" Project Id required !!! ", 400);
+
+  const members = await projectService.getMembersByProjectId(projectId);
+  res.status(200).json(members)
+
+
+
+
 }
 
 export const addMembers = async (req: Request, res: Response) => {
+
+
   const projectId = parseInt(req.params.projectId);
   const memberData = req.body.memberId;
   if (!projectId || !memberData || memberData.length === 0) throw new ApiError(" field is missing ", 400);
@@ -114,10 +122,13 @@ export const addMembers = async (req: Request, res: Response) => {
   const member = await projectService.addMembers(data);
   res.status(200).json(member);
 
+
 }
 
 
 export const removeMembers = async (req: Request, res: Response) => {
+
+
   const data = {
     projectId: parseInt(req.params.projectId),
     memberId: req.params.memberId
@@ -127,4 +138,6 @@ export const removeMembers = async (req: Request, res: Response) => {
 
   const removedMember = await projectService.removeMembers(data);
   res.status(200).json(removedMember);
-};
+
+
+}

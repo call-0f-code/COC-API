@@ -188,7 +188,9 @@ export default function projectsRouter(
  * 
  * @apiError (400) BadRequest Some required fields are missing
  * @apiError (500) InternalServerError Internal server error
- */ 
+ */
+
+    
     router.delete( '/:projectId/members/:memberId', removeMembers)
 
 

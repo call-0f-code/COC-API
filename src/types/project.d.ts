@@ -2,12 +2,6 @@ import "express";
 export {};
 
 declare global {
-  type projectContent = {
-    name: string;
-    imageUrl: string;
-    githubUrl: string;
-    deployUrl: string;
-  };
 
     type projectContent = {
         name: string,
