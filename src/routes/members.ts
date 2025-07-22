@@ -20,7 +20,7 @@ export default function membersRouter(
    * @apiSuccess {Object} user Member object.
    * @apiError (Error 400) BadRequest No memberId provided.
    */
-  router.get("/details/:memberId", memberCtrl.getUserDetails);
+  router.get("/:memberId", memberCtrl.getUserDetails);
 
   /**
    * @api {get} /api/members List all approved members
