@@ -35,7 +35,7 @@ export default function projectsRouter(
 
     //   Get all User
 /**
- * @api {get} /api/v1/projects Get all projects
+ * @api {get} /api/v1/projects/ Get all projects
  * @apiName getProjects
  * @apiGroup Project
  *
@@ -84,7 +84,7 @@ export default function projectsRouter(
 
     //  Create project
 /**
- * @api {post} /api/v1/projects/create Create a new project
+ * @api {post} /api/v1/projects/ Create a new project
  * @apiName createProject
  * @apiGroup Project
  * 
@@ -100,11 +100,11 @@ export default function projectsRouter(
  * @apiError (500) InternalServerError Database error or internal issue
  */
 
-    router.post('/create', upload.single('image') , parseCreateProjectData , createProject )
+    router.post('/', upload.single('image') , parseCreateProjectData , createProject )
 
     //  Update Project
      /**
- * @api {patch} /api/v1/projects/:projectId/update Update a project
+ * @api {patch} /api/v1/projects/:projectId Update a project
  * @apiName updateProjects
  * @apiGroup Project
  *
@@ -121,12 +121,12 @@ export default function projectsRouter(
  * @apiError (500) InternalServerError Database error or unexpected issue
  */
 
-    router.patch('/:projectId/update', upload.single('image') , parseCreateProjectData , updateProjects )
+    router.patch('/:projectId', upload.single('image') , parseCreateProjectData , updateProjects )
 
     //  delete projects
 
  /**
- * @api {delete} /api/v1/projects/:projectId/delete Delete a project
+ * @api {delete} /api/v1/projects/:projectId Delete a project
  * @apiName deleteProjects
  * @apiGroup Project
  * 
@@ -140,7 +140,7 @@ export default function projectsRouter(
 
 
     
-    router.delete('/:projectId/delete', deleteProjects )
+    router.delete('/:projectId', deleteProjects )
 
   /**
  * @api {get} /api/v1/projects/:projectId/members Get members enrolled in a project
