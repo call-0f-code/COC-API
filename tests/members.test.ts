@@ -16,7 +16,6 @@ jest.mock('../src/db/client', () => ({
   },
 }));
 
-
 jest.mock('../src/utils/imageUtils');
 const mockSupabase = {} as SupabaseClient;
 
@@ -75,33 +74,33 @@ describe('Member Controller - updateAMember', () => {
       body: { github: 'https://github.com/shrutii' },
       file: undefined,
     } as unknown as Request;
+
     const res = mockResponse();
 
     const mockMember = {
-  id: "123",
-  name: "Test User",
-  email: "test@example.com",
-  phone: null,
-  bio: null,
-  profilePhoto: null,
-  github: "testgithub",
-  linkedin: null,
-  twitter: null,
-  leetcode: null,
-  codeforces: null,
-  codechef: null,
-  gfg: null,
-  geeksforgeeks: null,
-  passoutYear: new Date("2025-05-31"),
-  isManager: false,
-  isApproved: false,
-  approvedById: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
+      id: '123',
+      name: 'Test User',
+      email: 'test@example.com',
+      phone: null,
+      bio: null,
+      profilePhoto: null,
+      github: 'testgithub',
+      linkedin: null,
+      twitter: null,
+      leetcode: null,
+      codeforces: null,
+      codechef: null,
+      gfg: null,
+      geeksforgeeks: null,
+      passoutYear: new Date('2025-05-31'),
+      isManager: false,
+      isApproved: false,
+      approvedById: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-const spy = jest.spyOn(memberService, 'updateMember').mockResolvedValue(mockMember);
-
+    const spy = jest.spyOn(memberService, 'updateMember').mockResolvedValue(mockMember);
 
     const handler = updateAMember(mockSupabase);
     await handler(req, res);
@@ -124,32 +123,31 @@ const spy = jest.spyOn(memberService, 'updateMember').mockResolvedValue(mockMemb
     const res = mockResponse();
 
     (uploadImage as jest.Mock).mockResolvedValue('http://image.url');
-    
+
     const mockMember = {
-  id: "123",
-  name: "Test User",
-  email: "test@example.com",
-  phone: null,
-  bio: null,
-  profilePhoto: null,
-  github: "testgithub",
-  linkedin: null,
-  twitter: null,
-  leetcode: null,
-  codeforces: null,
-  codechef: null,
-  gfg: null,
-  geeksforgeeks: null,
-  passoutYear: new Date("2025-05-31"),
-  isManager: false,
-  isApproved: false,
-  approvedById: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
+      id: '123',
+      name: 'Test User',
+      email: 'test@example.com',
+      phone: null,
+      bio: null,
+      profilePhoto: 'http://image.url',
+      github: 'testgithub',
+      linkedin: null,
+      twitter: null,
+      leetcode: null,
+      codeforces: null,
+      codechef: null,
+      gfg: null,
+      geeksforgeeks: null,
+      passoutYear: new Date('2025-05-31'),
+      isManager: false,
+      isApproved: false,
+      approvedById: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-const spy = jest.spyOn(memberService, 'updateMember').mockResolvedValue(mockMember);
-
+    const spy = jest.spyOn(memberService, 'updateMember').mockResolvedValue(mockMember);
 
     const handler = updateAMember(mockSupabase);
     await handler(req, res);
