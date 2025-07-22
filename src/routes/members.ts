@@ -11,7 +11,7 @@ export default function membersRouter(
   const router = express.Router();
 
   /**
-   * @api {get} /api/members/details/:memberId Get a member's details
+   * @api {get} /members/details/:memberId Get a member's details
    * @apiName GetUserDetails
    * @apiGroup Member
    *
@@ -23,7 +23,7 @@ export default function membersRouter(
   router.get("/:memberId", memberCtrl.getUserDetails);
 
   /**
-   * @api {get} /api/members List all approved members
+   * @api {get} /members List all approved members
    * @apiName ListAllApprovedMembers
    * @apiGroup Member
    *
@@ -32,7 +32,7 @@ export default function membersRouter(
   router.get("/", memberCtrl.listAllApprovedMembers);
 
   /**
-   * @api {post} /api/members Create a new member
+   * @api {post} /members Create a new member
    * @apiName CreateAMember
    * @apiGroup Member
    *
@@ -48,7 +48,7 @@ export default function membersRouter(
   router.post("/", upload.single("file"), memberCtrl.createAMember(supabase));
 
   /**
-   * @api {patch} /api/v1/members/:memberId Update a member
+   * @api {patch} /members/:memberId Update a member
    * @apiName UpdateAMember
    * @apiGroup Member
    *
@@ -80,7 +80,7 @@ export default function membersRouter(
   );
 
   /**
-   * @api {get} /api/members/unapproved Get unapproved members
+   * @api {get} /members/unapproved Get unapproved members
    * @apiName GetUnapprovedMembers
    * @apiGroup Member
    *
@@ -89,7 +89,7 @@ export default function membersRouter(
   router.get("/unapproved", memberCtrl.getUnapprovedMembers);
 
   /**
-   * @api {patch} /api/members/approve/:memberId Approve/reject a member
+   * @api {patch} /members/approve/:memberId Approve/reject a member
    * @apiName UpdateApprovalRequest
    * @apiGroup Member
    *
@@ -103,7 +103,7 @@ export default function membersRouter(
   router.patch("/approve/:memberId", memberCtrl.updateRequest);
 
   /**
-   * @api {get} /api/members/achievements/:memberId Get member's achievements
+   * @api {get} /members/achievements/:memberId Get member's achievements
    * @apiName GetUserAchievements
    * @apiGroup Member
    *
@@ -125,7 +125,7 @@ export default function membersRouter(
   router.get("/projects/:memberId", memberCtrl.getUserProjects);
 
   /**
-   * @api {get} /api/members/interviews/:memberId Get member's interviews
+   * @api {get} /members/interviews/:memberId Get member's interviews
    * @apiName GetUserInterviews
    * @apiGroup Member
    *

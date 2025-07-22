@@ -5,6 +5,17 @@ import { ApiError } from '../src/utils/apiError';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { uploadImage } from '../src/utils/imageUtils';
 
+jest.mock('../src/app', () => ({
+  supabase: {
+    storage: {
+      from: jest.fn(() => ({
+        upload: jest.fn().mockResolvedValue({ data: { path: 'fake-path' }, error: null }),
+        remove: jest.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    },
+  },
+}));
+
 jest.mock('../src/utils/imageUtils');
 const mockSupabase = {} as SupabaseClient;
 
