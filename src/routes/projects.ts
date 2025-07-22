@@ -35,7 +35,7 @@ export default function projectsRouter(
 
     //   Get all User
 /**
- * @api {get} /api/v1/projects/ Get all projects
+ * @api {get} /projects/ Get all projects
  * @apiName getProjects
  * @apiGroup Project
  *
@@ -68,7 +68,7 @@ export default function projectsRouter(
 
     //  get Project by Id
 /**
- * @api {get} /api/v1/projects/:projectId Get specific project by ID
+ * @api {get} /projects/:projectId Get specific project by ID
  * @apiName getProjectById
  * @apiGroup Project
  * 
@@ -84,7 +84,7 @@ export default function projectsRouter(
 
     //  Create project
 /**
- * @api {post} /api/v1/projects/ Create a new project
+ * @api {post} /projects/   Create a new project
  * @apiName createProject
  * @apiGroup Project
  * 
@@ -104,7 +104,7 @@ export default function projectsRouter(
 
     //  Update Project
      /**
- * @api {patch} /api/v1/projects/:projectId Update a project
+ * @api {patch} /projects/:projectId   Update a project
  * @apiName updateProjects
  * @apiGroup Project
  *
@@ -126,7 +126,7 @@ export default function projectsRouter(
     //  delete projects
 
  /**
- * @api {delete} /api/v1/projects/:projectId Delete a project
+ * @api {delete} /projects/:projectId Delete a project
  * @apiName deleteProjects
  * @apiGroup Project
  * 
@@ -143,7 +143,7 @@ export default function projectsRouter(
     router.delete('/:projectId', deleteProjects )
 
   /**
- * @api {get} /api/v1/projects/:projectId/members Get members enrolled in a project
+ * @api {get} /projects/:projectId/members Get members enrolled in a project
  * @apiName getMembersByProjectId
  * @apiGroup MemberProject
  * 
@@ -159,7 +159,7 @@ export default function projectsRouter(
     router.get('/:projectId/members', getMembersByProjectId )
 
    /**
- * @api {post} /api/v1/projects/:projectId/members Add members to a project
+ * @api {post} /projects/:projectId/members Add members to a project
  * @apiName addMembers
  * @apiGroup MemberProject
  * 
@@ -177,7 +177,7 @@ export default function projectsRouter(
 
     //  Remover the memnber
    /**
- * @api {delete} /api/v1/projects/:projectId/members/:memberId Remove a member from a project
+ * @api {delete} /projects/:projectId/members/:memberId Remove a member from a project
  * @apiName removeMember
  * @apiGroup MemberProject
  * 
