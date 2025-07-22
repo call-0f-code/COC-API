@@ -1,6 +1,6 @@
 import { prisma } from "../db/client";
 
-export const getPrjects = async () => {
+export const getProjects = async () => {
   return await prisma.project.findMany({});
 };
 
@@ -12,21 +12,20 @@ export const getProjectById = async (projectId: number) => {
   });
 };
 
-export const createProject = async (projectContent: projectContent) => {
-  return await prisma.project.create({
-    data: {
-      name: projectContent.name,
-      imageUrl: projectContent.imageUrl,
-      githubUrl: projectContent.githubUrl,
-      deployUrl: projectContent.deployUrl,
-    },
-  });
-};
+export const createProject = async ( projectContent : projectContent ) => {
 
-export const updateProjects = async (
-  payload: updateContent,
-  projectId: number,
-) => {
+    return await prisma.project.create({
+        data : {
+            name : projectContent.name,
+            imageUrl : projectContent.imageUrl,
+            githubUrl : projectContent.githubUrl,
+            deployUrl : projectContent.deployUrl,
+            createdById :  projectContent.AdminId,
+        },
+    })
+   };
+
+export const updateProjects = async (payload: updateContent,  projectId: number ) => {
   const data = payload;
   return await prisma.project.update({
     where: {
@@ -52,14 +51,14 @@ export const getMembersByProjectId = async (projectId: number) => {
   });
 };
 
-export const addMembers = async (addMembersData: addMembersData) => {
-  return await prisma.memberProject.create({
-    data: {
-      memberId: addMembersData.memberId,
-      projectId: addMembersData.projectId,
-    },
-  });
-};
+export const addMembers = async ( addMembersData : addMembersData ) => {
+
+    return await prisma.memberProject.createMany({
+        data : addMembersData,
+        skipDuplicates : true
+    })
+}
+
 
 export const removeMembers = async (removedMemberData: removedMemberData) => {
   return await prisma.memberProject.delete({
