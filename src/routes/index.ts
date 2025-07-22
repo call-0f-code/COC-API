@@ -7,10 +7,12 @@ import interviewRouter from './interviews'
 import topicRouter from './topics'
 import quetionsRouter from './questions'
 import progressRouter from './progress'
+import membersRouter from './members'
 
 export default function routes(upload: Multer, supabase: SupabaseClient) {
   const router = Router();
 
+  router.use('/members', membersRouter(upload, supabase))
 
   router.use('/projects', projectsRouter(upload, supabase))
 
