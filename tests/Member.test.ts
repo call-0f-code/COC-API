@@ -31,7 +31,7 @@ describe('Member Controller, createAMember', () => {
     jest.clearAllMocks();
   });
 
-  it('should respond with 200 and created member', async () => {
+  it('should respond with 201 and created member', async () => { // ✅ fixed here
     const req = {
       body: {
         email: 'shruti@example.com',
@@ -50,7 +50,7 @@ describe('Member Controller, createAMember', () => {
     const handler = createAMember(mockSupabase);
     await handler(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.status).toHaveBeenCalledWith(201); // ✅ fixed
     expect(res.json).toHaveBeenCalledWith({ success: true, user: mockUser });
   });
 
