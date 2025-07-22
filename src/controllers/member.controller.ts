@@ -30,7 +30,7 @@ export const createAMember =
     const { email, name, password, passoutYear } = req.body;
 
     if (!email || !name || !password || !passoutYear) {
-      throw new ApiError("Required fields absent", 402);
+      throw new ApiError("Required fields absent", 400);
     }
 
     let imageUrl: string | undefined;
@@ -48,7 +48,7 @@ export const createAMember =
 
     if (!user) throw new ApiError("Error creating user", 500);
 
-    res.status(200).json({ success: true, user });
+    res.status(201).json({ success: true, user });
   };
 
 // Update an existing member
@@ -56,7 +56,7 @@ export const updateAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
     const { memberId } = req.params;
 
-    if(!memberId) throw new ApiError("No memberId provided", 402);
+    if(!memberId) throw new ApiError("No memberId provided", 400);
 
     const body = req.body;
 
