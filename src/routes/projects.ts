@@ -61,7 +61,7 @@ export default function projectsRouter(
  *   }
  * ]
  *
- * @apiError (500) InternalServerError Failed to fetch projects from the database
+ * @apiError (Error 500) InternalServerError Failed to fetch projects from the database
  */
 
     router.get('/', getProjects)
@@ -76,8 +76,8 @@ export default function projectsRouter(
  * 
  * @apiSuccess {Object} project The project object with the given ID
  * 
- * @apiError (404) NotFound No project found with the specified ID
- * @apiError (500) InternalServerError Database error or internal issue
+ * @apiError (Error 404) NotFound No project found with the specified ID
+ * @apiError (Error 500) InternalServerError Database error or internal issue
  */
 
     router.get('/:projectId', getProjectById)
@@ -96,8 +96,8 @@ export default function projectsRouter(
  * 
  * @apiSuccess {Object} project The created project object
  * 
- * @apiError (400) BadRequest Some fields are missing
- * @apiError (500) InternalServerError Database error or internal issue
+ * @apiError (Error 400) BadRequest Some fields are missing
+ * @apiError (Error 500) InternalServerError Database error or internal issue
  */
 
     router.post('/', upload.single('image') , parseCreateProjectData , createProject )
@@ -117,8 +117,8 @@ export default function projectsRouter(
  *
  * @apiSuccess {Object} project Updated project data
  *
- * @apiError (400) BadRequest Some required fields are missing or invalid
- * @apiError (500) InternalServerError Database error or unexpected issue
+ * @apiError (Error 400) BadRequest Some required fields are missing or invalid
+ * @apiError (Error 500) InternalServerError Database error or unexpected issue
  */
 
     router.patch('/:projectId', upload.single('image') , parseCreateProjectData , updateProjects )
@@ -134,8 +134,8 @@ export default function projectsRouter(
  * 
  * @apiSuccess {Object} deletedProject Details of the deleted project
  * 
- * @apiError (400) BadRequest Some required fields are missing or invalid
- * @apiError (500) InternalServerError Internal server error
+ * @apiError (Error 400) BadRequest Some required fields are missing or invalid
+ * @apiError (Error 500) InternalServerError Internal server error
  */
 
 
@@ -151,8 +151,8 @@ export default function projectsRouter(
  * 
  * @apiSuccess {Object[]} members Array of members associated with the project
  * 
- * @apiError (400) BadRequest Some required fields are missing
- * @apiError (500) InternalServerError Internal server error
+ * @apiError (Error 400) BadRequest Some required fields are missing
+ * @apiError (Error 500) InternalServerError Internal server error
  */
 
 
@@ -168,8 +168,8 @@ export default function projectsRouter(
  * 
  * @apiSuccess {Number} count Number of members successfully added
  * 
- * @apiError (400) BadRequest Some required fields are missing
- * @apiError (500) InternalServerError Internal server error
+ * @apiError (Error 400) BadRequest Some required fields are missing
+ * @apiError (Error 500) InternalServerError Internal server error
  */
 
 
@@ -186,8 +186,8 @@ export default function projectsRouter(
  * 
  * @apiSuccess {Object} member The member that was removed
  * 
- * @apiError (400) BadRequest Some required fields are missing
- * @apiError (500) InternalServerError Internal server error
+ * @apiError (Error 400) BadRequest Some required fields are missing
+ * @apiError (Error 500) InternalServerError Internal server error
  */
 
     
