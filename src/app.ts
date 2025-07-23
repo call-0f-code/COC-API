@@ -31,7 +31,9 @@ app.use(json());
 app.use(urlencoded({ extended: true }));
 
 // 3) Handle file uploads (in-memory)
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }
+});
 
 // 4) Mount your routes, injecting `upload` middleware where needed
 //    For endpoints that accept file uploads, you can do e.g.:
