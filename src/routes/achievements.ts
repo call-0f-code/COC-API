@@ -53,8 +53,8 @@ export default function acheivementsRouter(upload: Multer, supabase: SupabaseCli
    * @apiName createAchievement
    * @apiGroup Achievement
    *
-   * @apiParam (FormData) {File} image Image file
-   * @apiParam (FormData) {String} achievementData JSON string of achievement fields:
+   * @apiBody (FormData) {File} image Image file
+   * @apiBody (FormData) {String} achievementData JSON string of achievement fields:
    *   - title: string
    *   - description: string
    *   - achievedAt: Date
@@ -74,8 +74,8 @@ export default function acheivementsRouter(upload: Multer, supabase: SupabaseCli
    * @apiGroup Achievement
    *
    * @apiParam (Path Params) {Number} achievementId Achievement ID
-   * @apiParam (FormData) {File} [image] Optional new image
-   * @apiParam (FormData) {String} achievementData JSON string of updated fields:
+   * @apiBody (FormData) {File} [image] Optional new image
+   * @apiBody (FormData) {String} achievementData JSON string of updated fields:
    *   - title?: string
    *   - description?: string
    *   - achievedAt?: Date

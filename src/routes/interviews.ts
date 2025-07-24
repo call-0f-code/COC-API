@@ -62,11 +62,11 @@ export default function interviewRouter(upload: Multer, supabase: SupabaseClient
    * @apiGroup Interview
    *
    * @apiParam (Path Params) {UUID} memberId ID of the member sharing the interview
-   * @apiParam (Request Body) {String} company Name of the company
-   * @apiParam (Request Body) {String} role Role applied for
-   * @apiParam (Request Body) {String="Selected","Rejected","Pending"} verdict Result of the interview
-   * @apiParam (Request Body) {String} content Experience content
-   * @apiParam (Request Body) {Boolean} isAnonymous Whether the post is anonymous
+   * @apiBody (Request Body) {String} company Name of the company
+   * @apiBody (Request Body) {String} role Role applied for
+   * @apiBody (Request Body) {String="Selected","Rejected","Pending"} verdict Result of the interview
+   * @apiBody (Request Body) {String} content Experience content
+   * @apiBody (Request Body) {Boolean} isAnonymous Whether the post is anonymous
    *
    * @apiSuccess {Object} interview Created interview experience
    *
@@ -81,12 +81,12 @@ export default function interviewRouter(upload: Multer, supabase: SupabaseClient
    * @apiGroup Interview
    *
    * @apiParam (Path Params) {Number} id Interview ID to update
-   * @apiParam (Request Body) {UUID} memberId Member ID of the owner
-   * @apiParam (Request Body) {String} [company] Company name
-   * @apiParam (Request Body) {String} [role] Role
-   * @apiParam (Request Body) {String="Selected","Rejected","Pending"} [verdict] Interview result
-   * @apiParam (Request Body) {String} [content] Experience content
-   * @apiParam (Request Body) {Boolean} [isAnonymous] Anonymous flag
+   * @apiBody (Request Body) {UUID} memberId Member ID of the owner
+   * @apiBody (Request Body) {String} [company] Company name
+   * @apiBody (Request Body) {String} [role] Role
+   * @apiBody (Request Body) {String="Selected","Rejected","Pending"} [verdict] Interview result
+   * @apiBody (Request Body) {String} [content] Experience content
+   * @apiBody (Request Body) {Boolean} [isAnonymous] Anonymous flag
    *
    * @apiSuccess {Object} interview Updated interview experience
    *
