@@ -23,18 +23,18 @@ export default function membersRouter(
   router.get("/:memberId", memberCtrl.getUserDetails);
 
   /**
-   * @api {get} /members List all approved members
+   * @api {get} /members List all approved members or get member by email
    * @apiName ListAllApprovedMembers
    * @apiGroup Member
    *
-   * * @apiDescription
-   * - Returns a list of all approved members if no email is provided.
-   * - If `email` is provided in the request body, returns the member associated with that email.
+   *  @apiDescription
+   * - Returns a list of all approved members if no email query parameter is provided.
+   * - If `email` query parameter is provided, returns the member associated with that email.
    *
-   *  @apiBody {String} [email] Optional email to fetch a specific member.
+   *  @apiQuery {String} [email] Optional email to fetch a specific member.
    *
-   * @apiSuccess {Boolean} success Whether the operation was successful.
-   * @apiSuccess {Object|Object[]} user The user object (if email provided) or list of approved members.
+   * @apiSuccess {Object} user Single user object when email provided.
++  * @apiSuccess {Object[]} user Array of approved members when no email provided.
    * @apiSuccess {String} [message] Message in case of full list fetch.
    *
    * @apiError (400) IncorrectEmail The provided email does not match any user.

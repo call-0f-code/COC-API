@@ -7,11 +7,11 @@ import { SupabaseClient } from "@supabase/supabase-js";
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
   
-  const body = req.body;
+  const {email} = req.query;
 
-  if(body.email) {
+  if(email) {
 
-    const user = memberService.getUserByEmail(body.email);
+    const user = await memberService.getUserByEmail(email);
 
     if(!user) throw new ApiError('Incorrect email', 400);
 
@@ -24,7 +24,7 @@ export const listAllApprovedMembers = async (req: Request, res: Response) => {
   const user = await memberService.approvedMembers();
   res
     .status(200)
-    .json({ user, success: true, message: "Fetched approved users" });
+    .json({ user, success: true });
   }
 
 };
