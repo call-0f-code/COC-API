@@ -43,7 +43,7 @@ export const createProject = async (req: Request, res: Response) => {
     name: req.body.projectData.name,
     imageUrl: imageUrl,
     githubUrl: req.body.projectData.githubUrl,
-    deployUrl: req.body.deployUrl,
+    deployUrl: req.body.projectData.deployUrl,
     AdminId: req.body.projectData.adminId,
   };
 
@@ -62,7 +62,7 @@ export const updateProjects = async (req: Request, res: Response) => {
   let imageUrl = null;
   const file = req.file;
 
-  if (file) {
+  if ( file ) {
     imageUrl = await uploadImage(supabase, file, 'projects');
   }
 
