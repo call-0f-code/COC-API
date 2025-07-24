@@ -11,7 +11,7 @@ export default function membersRouter(
   const router = express.Router();
 
   /**
-   * @api {get} /members/details/:memberId Get a member's details
+   * @api {get} /members/:memberId Get a member's details
    * @apiName GetUserDetails
    * @apiGroup Member
    *
