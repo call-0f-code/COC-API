@@ -3,17 +3,18 @@ import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
 import { deleteImage, uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { password } from "bun";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
   
-  const {email} = req.query;
+  const {email, password} = req.query;
 
   if(email) {
 
-    const user = await memberService.getUserByEmail(email as string);
+    const user = await memberService.getUserByEmail(email as string, password as string);
 
-    if(!user) throw new ApiError('Incorrect email', 400);
+    if(!user) throw new ApiError('Incorrect email or password', 400);
 
     res.status(200).json({
       success: true,
