@@ -3,13 +3,31 @@ import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
 import { deleteImage, uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { password } from "bun";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
+  
+  const body = req.body;
+
+  if(body.email) {
+
+    const user = memberService.getUserByEmail(body.email);
+
+    if(!user) throw new ApiError('Incorrect email', 400);
+
+    res.status(200).json({
+      success: true,
+      user
+    })
+  }
+  else {  
   const user = await memberService.approvedMembers();
   res
     .status(200)
     .json({ user, success: true, message: "Fetched approved users" });
+  }
+
 };
 
 // Get details of a single user

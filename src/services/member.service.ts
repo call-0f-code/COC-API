@@ -1,14 +1,24 @@
 import { prisma } from "../db/client";
 import { ApiError } from "../utils/apiError";
 
-export const checkAdmin = async (adminId: string) => {
+export const getUserByEmail = async(email: string) => {
   return await prisma.member.findUnique({
     where: {
-      id: adminId,
-      isManager: true,
+      email: email
     },
-  });
-};
+    select: {
+      id: true,
+      accounts: {
+        where: {
+          provider: 'credentials',
+        },
+        select: {
+          password: true,
+        },
+      },
+    }
+  })
+}
 
 export const approvedMembers = async () => {
   return await prisma.member.findMany({
