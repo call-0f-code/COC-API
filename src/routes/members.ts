@@ -11,7 +11,7 @@ export default function membersRouter(
   const router = express.Router();
 
   /**
-   * @api {get} /members/details/:memberId Get a member's details
+   * @api {get} /members/:memberId Get a member's details
    * @apiName GetUserDetails
    * @apiGroup Member
    *
@@ -23,11 +23,21 @@ export default function membersRouter(
   router.get("/:memberId", memberCtrl.getUserDetails);
 
   /**
-   * @api {get} /members List all approved members
+   * @api {get} /members List all approved members or get member by email
    * @apiName ListAllApprovedMembers
    * @apiGroup Member
    *
-   * @apiSuccess {Object[]} user List of approved members.
+   *  @apiDescription
+   * - Returns a list of all approved members if no email query parameter is provided.
+   * - If `email` query parameter is provided, returns the member associated with that email.
+   *
+   *  @apiQuery {String} [email] Optional email to fetch a specific member.
+   *
+   * @apiSuccess {Object} user Single user object when email provided.
++  * @apiSuccess {Object[]} user Array of approved members when no email provided.
+   * @apiSuccess {String} [message] Message in case of full list fetch.
+   *
+   * @apiError (400) IncorrectEmail The provided email does not match any user.
    */
   router.get("/", memberCtrl.listAllApprovedMembers);
 
