@@ -88,11 +88,11 @@ export default function projectsRouter(
  * @apiName createProject
  * @apiGroup Project
  * 
- * @apiParam (FormData) {String} name Name of the project
- * @apiParam (FormData) {File} image Image file for the project
- * @apiParam (FormData) {String} githubUrl GitHub URL of the project
- * @apiParam (FormData) {String} deployUrl Deployment link of the project
- * @apiParam (FormData) {UUID} AdminId ID of the admin creating the project
+ * @apiBody (FormData) {String} name Name of the project
+ * @apiBody (FormData) {File} image Image file for the project
+ * @apiBody (FormData) {String} githubUrl GitHub URL of the project
+ * @apiBody (FormData) {String} deployUrl Deployment link of the project
+ * @apiBody (FormData) {UUID} AdminId ID of the admin creating the project
  * 
  * @apiSuccess {Object} project The created project object
  * 
@@ -109,11 +109,11 @@ export default function projectsRouter(
  * @apiGroup Project
  *
  * @apiParam (Path Params) {Number} projectId ID of the project to update
- * @apiParam (Body)        {String} [name] Name of the project (optional)
- * @apiParam (Body)        {String} [githubUrl] GitHub URL of the project (optional)
- * @apiParam (Body)        {String} [deployUrl] Deployment link of the project (optional)
- * @apiParam (Body)        {UUID}   adminId ID of the admin updating the project (required)
- * @apiParam (Form Data)   {File}   [image] Image file (optional)
+ * @apiBody (Body)        {String} [name] Name of the project (optional)
+ * @apiBody (Body)        {String} [githubUrl] GitHub URL of the project (optional)
+ * @apiBody (Body)        {String} [deployUrl] Deployment link of the project (optional)
+ * @apiBody (Body)        {UUID}   adminId ID of the admin updating the project (required)
+ * @apiBody (Form Data)   {File}   [image] Image file (optional)
  *
  * @apiSuccess {Object} project Updated project data
  *
@@ -164,7 +164,7 @@ export default function projectsRouter(
  * @apiGroup MemberProject
  * 
  * @apiParam (Path Params) {Number} projectId ID of the project
- * @apiParam (Request Body) {UUID[]} memberIds Array of member IDs to add to the project
+ * @apiBody (Request Body) {UUID[]} memberIds Array of member IDs to add to the project
  * 
  * @apiSuccess {Number} count Number of members successfully added
  * 
