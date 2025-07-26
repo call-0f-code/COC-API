@@ -1,14 +1,24 @@
 import { prisma } from "../db/client";
 import { ApiError } from "../utils/apiError";
 
-export const checkAdmin = async (adminId: string) => {
+export const getUserByEmail = async(email: string, hashedPassword: string) => {
   return await prisma.member.findUnique({
     where: {
-      id: adminId,
-      isManager: true,
+      email: email
     },
-  });
-};
+    select: {
+      id: true,
+      isApproved: true,
+      isManager: true,
+      accounts: {
+        where: {
+          provider: 'credentials',
+          password: hashedPassword,
+        },
+      },
+    }
+  })
+}
 
 export const approvedMembers = async () => {
   return await prisma.member.findMany({
@@ -29,24 +39,25 @@ export const getDetails = async (memberId: string) => {
 export const createMember = async (
   email: string,
   name: string,
-  password: string,
-  passoutYear: number,
+  provider: "google" | "github" | "credentials",
+  passoutYear?: number,
   imageUrl?: string,
+  password?: string
 ) => {
   const newMember = await prisma.member.create({
     data: {
-      email: email,
-      name: name,
-      passoutYear: new Date(passoutYear),
+      email,
+      name,
+      passoutYear: passoutYear === undefined ? "" :  new Date(passoutYear),
       profilePhoto: imageUrl,
     },
   });
 
   await prisma.account.create({
     data: {
-      provider: "credentials",
+      provider,
       providerAccountId: email,
-      password: password,
+      password: provider === "credentials" ? password : null,
       memberId: newMember.id,
     },
   });

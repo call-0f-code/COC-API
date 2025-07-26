@@ -6,10 +6,27 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
+  
+  const {email, password} = req.query;
+
+  if(email && password) {
+
+    const user = await memberService.getUserByEmail(email as string, password as string);
+
+    if(!user) throw new ApiError('Incorrect email or password', 400);
+
+    res.status(200).json({
+      success: true,
+      user
+    })
+  }
+  else {  
   const user = await memberService.approvedMembers();
   res
     .status(200)
-    .json({ user, success: true, message: "Fetched approved users" });
+    .json({ user, success: true });
+  }
+
 };
 
 // Get details of a single user
@@ -27,7 +44,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
 // Create a new member
 export const createAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
-    const { email, name, password, passoutYear } = req.body;
+    const {email, name, password, passoutYear, provider} = req.body;
 
     if (!email || !name || !password || !passoutYear) {
       throw new ApiError("Required fields absent", 400);
@@ -44,6 +61,7 @@ export const createAMember =
       password,
       passoutYear,
       imageUrl,
+      provider,
     );
 
     if (!user) throw new ApiError("Error creating user", 500);
