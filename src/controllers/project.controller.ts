@@ -16,19 +16,15 @@ export const getProjects = async (req: Request, res: Response) => {
 
 export const getProjectById = async (req: Request, res: Response) => {
 
-
   const projectId = parseInt(req.params.projectId);
-
   if (isNaN(projectId)) throw new ApiError("Invalid project ID", 400);
 
   const project = await projectService.getProjectById(projectId);
   res.status(200).json(project);
 
-
 };
 
 export const createProject = async (req: Request, res: Response) => {
-
 
   const file = req.file;
   if (!file) throw new ApiError('Image file not found', 400);
@@ -53,7 +49,6 @@ export const createProject = async (req: Request, res: Response) => {
 };
 
 export const updateProjects = async (req: Request, res: Response) => {
-
 
   const projectInfo = req.body.projectData;
   const projectId = parseInt(req.params.projectId);

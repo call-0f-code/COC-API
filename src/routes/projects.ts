@@ -12,15 +12,13 @@ import {
     updateProjects
 } from '../controllers/project.controller'
 
-
-function parseCreateProjectData(req : Request, res : Response  , next : NextFunction) {
+function parseProjectData(req : Request, res : Response  , next : NextFunction) {
             
             if(req.body.projectData){
                     try{
                         const parse = JSON.parse(req.body.projectData);
                         req.body.projectData = parse;
                     }catch(e){
-                        console.log(e);
                         return res.status(400).json({ message: 'Invalid JSON in projectData field' });
                     }
             }
@@ -100,7 +98,7 @@ export default function projectsRouter(
  * @apiError (Error 500) InternalServerError Database error or internal issue
  */
 
-    router.post('/', upload.single('image') , parseCreateProjectData , createProject )
+    router.post('/' ,  upload.single('image') , parseProjectData , createProject )
 
     //  Update Project
      /**
@@ -121,7 +119,7 @@ export default function projectsRouter(
  * @apiError (Error 500) InternalServerError Database error or unexpected issue
  */
 
-    router.patch('/:projectId', upload.single('image') , parseCreateProjectData , updateProjects )
+    router.patch('/:projectId', upload.single('image') , parseProjectData , updateProjects )
 
     //  delete projects
 
