@@ -11,7 +11,7 @@ export const listAllApprovedMembers = async (req: Request, res: Response) => {
 
   if(email && password) {
 
-    const user = await memberService.getUserByEmail(email as string, password as string);
+    const user = await memberService.getUserByEmail(email as string);
 
     if(!user) throw new ApiError('Incorrect email or password', 400);
 
