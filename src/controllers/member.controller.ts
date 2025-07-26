@@ -3,7 +3,6 @@ import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
 import { deleteImage, uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { password } from "bun";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
