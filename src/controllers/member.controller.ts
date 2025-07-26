@@ -10,7 +10,7 @@ export const listAllApprovedMembers = async (req: Request, res: Response) => {
   
   const {email, password} = req.query;
 
-  if(email) {
+  if(email && password) {
 
     const user = await memberService.getUserByEmail(email as string, password as string);
 
@@ -45,7 +45,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
 // Create a new member
 export const createAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
-    const { email, name, password, passoutYear } = req.body;
+    const {email, name, password, passoutYear, provider} = req.body;
 
     if (!email || !name || !password || !passoutYear) {
       throw new ApiError("Required fields absent", 400);
@@ -62,6 +62,7 @@ export const createAMember =
       password,
       passoutYear,
       imageUrl,
+      provider,
     );
 
     if (!user) throw new ApiError("Error creating user", 500);

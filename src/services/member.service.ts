@@ -39,24 +39,25 @@ export const getDetails = async (memberId: string) => {
 export const createMember = async (
   email: string,
   name: string,
-  password: string,
-  passoutYear: number,
+  provider: "google" | "github" | "credentials",
+  passoutYear?: number,
   imageUrl?: string,
+  password?: string
 ) => {
   const newMember = await prisma.member.create({
     data: {
-      email: email,
-      name: name,
-      passoutYear: new Date(passoutYear),
+      email,
+      name,
+      passoutYear: passoutYear === undefined ? "" :  new Date(passoutYear),
       profilePhoto: imageUrl,
     },
   });
 
   await prisma.account.create({
     data: {
-      provider: "credentials",
+      provider,
       providerAccountId: email,
-      password: password,
+      password: provider === "credentials" ? password : null,
       memberId: newMember.id,
     },
   });
