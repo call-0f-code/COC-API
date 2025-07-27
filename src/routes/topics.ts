@@ -47,7 +47,7 @@ export default function topicRouter() {
    * @apiSuccess {number} Topic.createdAt Timestamp when the topic was created.
    * @apiSuccess {number} Topic.updatedAt Timestamp when the topic was last updated.
    * @apiSuccess {String} Topic.createdById ID of the user who created the topic.
-   * @apiSuccess {String} Topic-.updatedById ID of the user who last updated the topic.
+   * @apiSuccess {String} Topic.updatedById ID of the user who last updated the topic.
    *
    * @apiError (Error 400) BadRequest Missing required fields.
    */
