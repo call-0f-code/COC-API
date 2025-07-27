@@ -11,7 +11,6 @@ import membersRouter from './members'
 
 export default function routes(upload: Multer, supabase: SupabaseClient) {
   const router = Router();
-
   router.use('/members', membersRouter(upload, supabase))
 
   router.use('/projects', projectsRouter(upload, supabase))

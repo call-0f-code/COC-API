@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as achievementService from "../services/achievement.service";
-import { uploadImage } from "../utils/imageUtils";
+import { uploadImage, deleteImage } from "../utils/imageUtils";
 import { supabase } from "../app";
 import { ApiError } from "../utils/apiError";
 
@@ -80,10 +80,6 @@ export const updateAchievementById = async (req: Request, res: Response) => {
   const file = req.file;
   let imageUrl: string | undefined;
 
-  if (file) {
-    imageUrl = await uploadImage(supabase, file, 'achievements');
-  }
-
   let achievementData = req.body.achievementData;
   if (typeof achievementData === 'string') {
     try {
@@ -99,25 +95,30 @@ export const updateAchievementById = async (req: Request, res: Response) => {
     throw new ApiError("updatedById is required", 400);
   }
 
-  if (
-    !title &&
-    !description &&
-    !achievedAt &&
-    !imageUrl &&
-    (!Array.isArray(memberIds) || memberIds.length === 0)
-  ) {
-    throw new ApiError("At least one field must be provided for update", 400);
-  }
-
+  
   const existingAchievement = await achievementService.getAchievementById(achievementId);
   if (!existingAchievement) {
     throw new ApiError("Achievement not found", 404);
   }
-
+  
+  if (file) {
+    imageUrl = await uploadImage(supabase, file, 'achievements', existingAchievement.imageUrl );
+  }
+  
   if (imageUrl) {
     achievementData.imageUrl = imageUrl;
   }
-
+  
+    if (
+      !title &&
+      !description &&
+      !achievedAt &&
+      !imageUrl &&
+      (!Array.isArray(memberIds) || memberIds.length === 0)
+    ) {
+      throw new ApiError("At least one field must be provided for update", 400);
+    }
+    
   const updatedAchievement = await achievementService.updateAchievementById(
     achievementId,
     achievementData
@@ -139,6 +140,15 @@ export const deleteAchievementById = async (req: Request, res: Response) => {
 
   if (!achievementId || isNaN(achievementId)) {
     throw new ApiError("Invalid achievement ID", 400);
+  }
+
+  const existingAchievement = await achievementService.getAchievementById(achievementId);
+  if (!existingAchievement) {
+    throw new ApiError("Achievement not found", 404);
+  }
+
+  if (existingAchievement.imageUrl) {
+    await deleteImage(supabase, existingAchievement.imageUrl);
   }
 
   await achievementService.deleteAchievementById(achievementId);

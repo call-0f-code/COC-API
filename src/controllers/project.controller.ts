@@ -1,7 +1,7 @@
 import * as projectService from "../services/project.service";
 import { Request, Response } from "express";
 import { ApiError } from "../utils/apiError";
-import { uploadImage } from "../utils/imageUtils";
+import { deleteImage, uploadImage } from "../utils/imageUtils";
 import { supabase } from "../app";
 
 
@@ -16,19 +16,15 @@ export const getProjects = async (req: Request, res: Response) => {
 
 export const getProjectById = async (req: Request, res: Response) => {
 
-
   const projectId = parseInt(req.params.projectId);
-
   if (isNaN(projectId)) throw new ApiError("Invalid project ID", 400);
 
   const project = await projectService.getProjectById(projectId);
   res.status(200).json(project);
 
-
 };
 
 export const createProject = async (req: Request, res: Response) => {
-
 
   const file = req.file;
   if (!file) throw new ApiError('Image file not found', 400);
@@ -43,7 +39,7 @@ export const createProject = async (req: Request, res: Response) => {
     name: req.body.projectData.name,
     imageUrl: imageUrl,
     githubUrl: req.body.projectData.githubUrl,
-    deployUrl: req.body.deployUrl,
+    deployUrl: req.body.projectData.deployUrl,
     AdminId: req.body.projectData.adminId,
   };
 
@@ -54,16 +50,19 @@ export const createProject = async (req: Request, res: Response) => {
 
 export const updateProjects = async (req: Request, res: Response) => {
 
-
   const projectInfo = req.body.projectData;
   const projectId = parseInt(req.params.projectId);
   const updatedById = projectInfo.updatedById;
 
   let imageUrl = null;
   const file = req.file;
+  if( !projectId ) throw new ApiError("ProjectId is missng !!!" , 401);
 
-  if (file) {
-    imageUrl = await uploadImage(supabase, file, 'projects');
+  if ( file ) {
+    const response = await projectService.getProjectById(projectId);
+    const fileUlr = response?.imageUrl;
+    if( !fileUlr ) throw new ApiError("File is not exits");
+    imageUrl = await uploadImage(supabase, file, 'projects' , fileUlr);
   }
 
   if (imageUrl) {
@@ -71,7 +70,7 @@ export const updateProjects = async (req: Request, res: Response) => {
   }
 
 
-  if (!projectId || projectInfo.length === 0 || !updatedById) throw new ApiError(" Something is Mising ", 400);
+  if ( projectInfo.length === 0 || !updatedById) throw new ApiError(" Something is Mising ", 400);
 
   const project = await projectService.updateProjects(projectInfo, projectId);
   res.status(200).json(project)
@@ -85,6 +84,13 @@ export const deleteProjects = async (req: Request, res: Response) => {
 
   const projectId = parseInt(req.params.projectId);
   if (!projectId) throw new ApiError(" Send The project id ", 400);
+
+  const response = await projectService.getProjectById(projectId);
+  const fileUrl = response?.imageUrl;
+
+  if(fileUrl){
+      await deleteImage(supabase , fileUrl);
+  }
 
   const deleted = await projectService.deleteProjects(projectId);
   res.status(200).json(deleted)

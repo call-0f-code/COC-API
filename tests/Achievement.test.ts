@@ -1,6 +1,6 @@
 import { createAchievement, getAchievements, getAchievementById, updateAchievementById, deleteAchievementById, removeMemberFromAchievement } from '../src/controllers/achievement.controller';
 import * as achievementService from '../src/services/achievement.service';
-import { uploadImage } from '../src/utils/imageUtils';
+import { uploadImage, deleteImage } from '../src/utils/imageUtils';
 import { ApiError } from '../src/utils/apiError';
 
 jest.mock('../src/app', () => ({
@@ -24,7 +24,9 @@ jest.mock('../src/routes/achievements', () => {
 
 jest.mock('../src/utils/imageUtils', () => ({
   uploadImage: jest.fn(),
+  deleteImage: jest.fn(),
 }));
+
 
 const mockedUploadImage = uploadImage as jest.Mock;
 
@@ -368,6 +370,7 @@ describe('updateAchievementById', () => {
   });
 });
 
+const mockedDeleteImage = deleteImage as jest.Mock;
 
 describe('deleteAchievementById', () => {
   it('should delete the achievement and return 200 success message', async () => {
@@ -392,14 +395,26 @@ describe('deleteAchievementById', () => {
       createdAt: new Date(),
       updatedById: null,
       updatedAt: new Date(),
+
+      createdBy: { id: 'admin_123', name: 'Admin' },
+      updatedBy: null,
+      members: [],
     };
+
+    jest
+      .spyOn(achievementService, 'getAchievementById')
+      .mockResolvedValue(mockDeletedAchievement);
 
     jest
       .spyOn(achievementService, 'deleteAchievementById')
       .mockResolvedValue(mockDeletedAchievement);
 
+    mockedDeleteImage.mockResolvedValue(undefined);
+
     await deleteAchievementById(req, res);
 
+    expect(achievementService.getAchievementById).toHaveBeenCalledWith(1);
+    expect(mockedDeleteImage).toHaveBeenCalledWith(expect.anything(), mockDeletedAchievement.imageUrl);
     expect(achievementService.deleteAchievementById).toHaveBeenCalledWith(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({

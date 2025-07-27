@@ -40,17 +40,14 @@ export default function topicRouter() {
    * @apiBody {String} description description of the topic.
    * @apiBody {String} adminId ID of the admin creating the topic.
    *
-   * @apiSuccess {Object[]} questions List of questions inside the topic.
-   * @apiSuccess {Object} questions[].question Question object.
-   * @apiSuccess {Number} questions[].question.id Question ID.
-   * @apiSuccess {String} questions[].question.questionName Name of the question.
-   * @apiSuccess {String} questions[].question.link Link to the question.
-   * @apiSuccess {String="Easy","Medium","Hard"} questions[].question.difficulty Difficulty level of the question.
-   * @apiSuccess {Number} questions[].question.topicId Topic ID associated with the question.
-   * @apiSuccess {Number} questions[].question.createdAt Timestamp when the question was created (Unix timestamp).
-   * @apiSuccess {Number} questions[].question.updatedAt Timestamp when the question was last updated (Unix timestamp).
-   * @apiSuccess {String} questions[].question.createdById ID of the user who created the question.
-   * @apiSuccess {String} questions[].question.updatedById ID of the user who last updated the question.
+   * @apiSuccess {Object} Topic New Topic object.
+   * @apiSuccess {Number} Topic.id Topic ID.
+   * @apiSuccess {String} Topic.title Title of the topic.
+   * @apiSuccess {String} Topic.description Description of the topic.
+   * @apiSuccess {number} Topic.createdAt Timestamp when the topic was created.
+   * @apiSuccess {number} Topic.updatedAt Timestamp when the topic was last updated.
+   * @apiSuccess {String} Topic.createdById ID of the user who created the topic.
+   * @apiSuccess {String} Topic.updatedById ID of the user who last updated the topic.
    *
    * @apiError (Error 400) BadRequest Missing required fields.
    */
