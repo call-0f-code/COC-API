@@ -1,7 +1,7 @@
 import * as projectService from "../services/project.service";
 import { Request, Response } from "express";
 import { ApiError } from "../utils/apiError";
-import { uploadImage } from "../utils/imageUtils";
+import { deleteImage, uploadImage } from "../utils/imageUtils";
 import { supabase } from "../app";
 
 
@@ -56,9 +56,13 @@ export const updateProjects = async (req: Request, res: Response) => {
 
   let imageUrl = null;
   const file = req.file;
+  if( !projectId ) throw new ApiError("ProjectId is missng !!!" , 401);
 
   if ( file ) {
-    imageUrl = await uploadImage(supabase, file, 'projects');
+    const response = await projectService.getProjectById(projectId);
+    const fileUlr = response?.imageUrl;
+    if( !fileUlr ) throw new ApiError("File is not exits");
+    imageUrl = await uploadImage(supabase, file, 'projects' , fileUlr);
   }
 
   if (imageUrl) {
@@ -66,7 +70,7 @@ export const updateProjects = async (req: Request, res: Response) => {
   }
 
 
-  if (!projectId || projectInfo.length === 0 || !updatedById) throw new ApiError(" Something is Mising ", 400);
+  if ( projectInfo.length === 0 || !updatedById) throw new ApiError(" Something is Mising ", 400);
 
   const project = await projectService.updateProjects(projectInfo, projectId);
   res.status(200).json(project)
@@ -80,6 +84,13 @@ export const deleteProjects = async (req: Request, res: Response) => {
 
   const projectId = parseInt(req.params.projectId);
   if (!projectId) throw new ApiError(" Send The project id ", 400);
+
+  const response = await projectService.getProjectById(projectId);
+  const fileUrl = response?.imageUrl;
+
+  if(fileUrl){
+      await deleteImage(supabase , fileUrl);
+  }
 
   const deleted = await projectService.deleteProjects(projectId);
   res.status(200).json(deleted)
