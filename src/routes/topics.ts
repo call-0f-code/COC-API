@@ -87,17 +87,7 @@ export default function topicRouter() {
    *
    * @apiSuccess {String} message Confirmation message
    * @apiSuccess {String="SUCCESS"} status  Response status.
-   * @apiSuccess {Object} question question object.
-   * @apiSuccess {Number} question.id Question ID.
-   * @apiSuccess {String} question.questionName Name of the question.
-   * @apiSuccess {String} question.link Link to the question.
-   * @apiSuccess {String="Easy","Medium","Hard"} question.difficulty Difficulty level of the question.
-   * @apiSuccess {Number} question.topicId Topic ID associated with the question.
-   * @apiSuccess {number} question.createdAt Timestamp when the question was created.
-   * @apiSuccess {number} question.updatedAt Timestamp when the question was last updated.
-   * @apiSuccess {String} question.createdById ID of the user who created the question.
-   * @apiSuccess {String} question.updatedById ID of the user who last updated the question.
-   *
+
    * @apiError (Error 400) BadRequest Missing required fields.
    */
   router.delete("/:topicId", deleteTopic);

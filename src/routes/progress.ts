@@ -38,7 +38,7 @@ export default function progressRouter() {
    * @apiError (Error 500) InternalServerError Error while toggling question completion.
    */
   router.patch(
-    "/:memeberId/questions/:questionId/completed/toggle",
+    "/:memberId/questions/:questionId/completed/toggle",
     toggleQuestions,
   );
 
