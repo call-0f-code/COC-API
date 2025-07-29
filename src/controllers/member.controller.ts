@@ -82,7 +82,7 @@ export const updateAMember =
       const oldData = await memberService.getDetails(memberId);
       const oldImage = oldData?.profilePhoto;
 
-      if(oldImage) await deleteImage(supabase, oldImage);
+      if(oldImage) await uploadImage(supabase, req.file, "members", oldImage);
 
       const imageUrl = await uploadImage(supabase, req.file, "members");
       body.profilePhoto = imageUrl;
@@ -90,7 +90,7 @@ export const updateAMember =
 
     await memberService.updateMember(memberId, body);
 
-    const updatedData = memberService.getDetails(memberId);
+    const updatedData = await memberService.getDetails(memberId);
     res
       .status(200)
       .json({ success: true, user: updatedData });
