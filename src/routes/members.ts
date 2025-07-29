@@ -132,7 +132,7 @@ export default function membersRouter(
    *
    * @apiSuccess {Object[]} projects List of projects.
    */
-  router.get("/:memberId/achievements", memberCtrl.getUserProjects);
+  router.get("/:memberId/projects", memberCtrl.getUserProjects);
 
   /**
    * @api {get} /members/interviews/:memberId Get member's interviews
