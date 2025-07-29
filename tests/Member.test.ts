@@ -153,12 +153,12 @@ describe('Member Controller - updateAMember', () => {
     };
 
     (uploadImage as jest.Mock)
-      .mockResolvedValueOnce(undefined) // first call with oldImage (does nothing)
-      .mockResolvedValueOnce('https://new.url/image.png'); // actual upload
+      .mockResolvedValueOnce(undefined) 
+      .mockResolvedValueOnce('https://new.url/image.png'); 
 
     jest.spyOn(memberService, 'getDetails')
-      .mockResolvedValueOnce(oldMember) // get old data (with image)
-      .mockResolvedValueOnce(updatedMember); // get updated data
+      .mockResolvedValueOnce(oldMember) 
+      .mockResolvedValueOnce(updatedMember); 
 
     const spyUpdate = jest
       .spyOn(memberService, 'updateMember')
