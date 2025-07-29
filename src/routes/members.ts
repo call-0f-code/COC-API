@@ -11,6 +11,15 @@ export default function membersRouter(
   const router = express.Router();
 
   /**
+   * @api {get} /members/unapproved Get unapproved members
+   * @apiName GetUnapprovedMembers
+   * @apiGroup Member
+   *
+   * @apiSuccess {Object[]} unapprovedMembers List of unapproved members.
+   */
+  router.get("/unapproved", memberCtrl.getUnapprovedMembers);
+  
+  /**
    * @api {get} /members/:memberId Get a member's details
    * @apiName GetUserDetails
    * @apiGroup Member
@@ -90,15 +99,6 @@ export default function membersRouter(
   );
 
   /**
-   * @api {get} /members/unapproved Get unapproved members
-   * @apiName GetUnapprovedMembers
-   * @apiGroup Member
-   *
-   * @apiSuccess {Object[]} unapprovedMembers List of unapproved members.
-   */
-  router.get("/unapproved", memberCtrl.getUnapprovedMembers);
-
-  /**
    * @api {patch} /members/approve/:memberId Approve/reject a member
    * @apiName UpdateApprovalRequest
    * @apiGroup Member
@@ -113,7 +113,7 @@ export default function membersRouter(
   router.patch("/approve/:memberId", memberCtrl.updateRequest);
 
   /**
-   * @api {get} /members/achievements/:memberId Get member's achievements
+   * @api {get} /members/:memberId/achievements Get member's achievements
    * @apiName GetUserAchievements
    * @apiGroup Member
    *
@@ -121,10 +121,10 @@ export default function membersRouter(
    *
    * @apiSuccess {Object[]} achievements List of achievements.
    */
-  router.get("/achievements/:memberId", memberCtrl.getUserAchievements);
+  router.get("/:memberId/achievements", memberCtrl.getUserAchievements);
 
   /**
-   * @api {get} /api/members/projects/:memberId Get member's projects
+   * @api {get} /api/members/:memberId/projects Get member's projects
    * @apiName GetUserProjects
    * @apiGroup Member
    *
@@ -132,10 +132,10 @@ export default function membersRouter(
    *
    * @apiSuccess {Object[]} projects List of projects.
    */
-  router.get("/projects/:memberId", memberCtrl.getUserProjects);
+  router.get("/:memberId/projects", memberCtrl.getUserProjects);
 
   /**
-   * @api {get} /members/interviews/:memberId Get member's interviews
+   * @api {get} /members/:memberId/interviews Get member's interviews
    * @apiName GetUserInterviews
    * @apiGroup Member
    *
@@ -143,7 +143,7 @@ export default function membersRouter(
    *
    * @apiSuccess {Object[]} interviews List of interviews.
    */
-  router.get("/interviews/:memberId", memberCtrl.getUserInterviews);
+  router.get("/:memberId/interviews", memberCtrl.getUserInterviews);
 
   return router;
 }
