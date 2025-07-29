@@ -113,7 +113,7 @@ export default function membersRouter(
   router.patch("/approve/:memberId", memberCtrl.updateRequest);
 
   /**
-   * @api {get} /members/achievements/:memberId Get member's achievements
+   * @api {get} /members/:memberId/achievements Get member's achievements
    * @apiName GetUserAchievements
    * @apiGroup Member
    *
@@ -124,7 +124,7 @@ export default function membersRouter(
   router.get("/:memberId/achievements", memberCtrl.getUserAchievements);
 
   /**
-   * @api {get} /api/members/projects/:memberId Get member's projects
+   * @api {get} /api/members/:memberId/projects Get member's projects
    * @apiName GetUserProjects
    * @apiGroup Member
    *
@@ -135,7 +135,7 @@ export default function membersRouter(
   router.get("/:memberId/projects", memberCtrl.getUserProjects);
 
   /**
-   * @api {get} /members/interviews/:memberId Get member's interviews
+   * @api {get} /members/:memberId/interviews Get member's interviews
    * @apiName GetUserInterviews
    * @apiGroup Member
    *
