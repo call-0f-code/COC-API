@@ -90,9 +90,10 @@ export const updateAMember =
 
     await memberService.updateMember(memberId, body);
 
+    const updatedData = memberService.getDetails(memberId);
     res
       .status(200)
-      .json({ success: true, message: "Updated member details successfully" });
+      .json({ success: true, user: updatedData });
   };
 
 // Get all unapproved members
