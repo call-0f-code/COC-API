@@ -1,7 +1,22 @@
 import { prisma } from "../db/client";
 
 export const getProjects = async () => {
-  return await prisma.project.findMany({});
+  return await prisma.project.findMany({
+      include : {
+        members : {
+          select: {
+          member: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profilePhoto: true,
+            },
+          },
+        },
+        }
+      }
+  });
 };
 
 export const getProjectById = async (projectId: number) => {
