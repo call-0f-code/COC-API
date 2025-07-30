@@ -12,7 +12,7 @@ export const getUserByEmail = async(email: string) => {
       isManager: true,
       accounts: {
         select: {
-          provider: true
+          password: true
         }
       },
     }
