@@ -58,10 +58,10 @@ export const createAMember =
     const user = await memberService.createMember(
       email,
       name,
+      provider,
       password,
       passoutYear,
       imageUrl,
-      provider,
     );
 
     if (!user) throw new ApiError("Error creating user", 500);
