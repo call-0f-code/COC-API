@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
 import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
-import { deleteImage, uploadImage } from "../utils/imageUtils";
+import { uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
   
-  const {email, password} = req.query;
+  const {email} = req.query;
 
-  if(email && password) {
+  if(email) {
 
     const user = await memberService.getUserByEmail(email as string);
 
@@ -58,10 +58,10 @@ export const createAMember =
     const user = await memberService.createMember(
       email,
       name,
+      provider,
       password,
       passoutYear,
       imageUrl,
-      provider,
     );
 
     if (!user) throw new ApiError("Error creating user", 500);
