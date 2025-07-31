@@ -1,6 +1,5 @@
 import express from 'express';
 import * as acheivementsCtrl from '../controllers/achievement.controller';
-import { supabase } from '../app';
 import { Multer } from 'multer';
 import { SupabaseClient } from '@supabase/supabase-js';
 
