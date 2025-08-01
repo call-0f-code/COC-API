@@ -23,7 +23,9 @@ jest.mock('../src/app', () => ({
 // Mock image upload utility
 jest.mock('../src/utils/imageUtils', () => ({
   uploadImage: jest.fn().mockResolvedValue('https://fake-url.com/projects/image.png'),
+  deleteImage: jest.fn().mockResolvedValue('https://fake-url.com/projects/image.png'),
 }));
+
 
 // Reusable mock response object
 const mockRes = () => {

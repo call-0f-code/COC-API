@@ -7,9 +7,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
   
-  const {email, password} = req.query;
+  const {email} = req.query;
 
-  if(email && password) {
+  if(email) {
 
     const user = await memberService.getUserByEmail(email as string);
 

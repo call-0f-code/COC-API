@@ -1,7 +1,6 @@
 import express from "express";
 import * as memberCtrl from "../controllers/member.controller";
 import { Multer } from "multer";
-import { supabase } from "../app";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export default function membersRouter(

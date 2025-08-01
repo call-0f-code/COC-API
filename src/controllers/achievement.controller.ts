@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as achievementService from "../services/achievement.service";
-import { uploadImage } from "../utils/imageUtils";
+import { uploadImage, deleteImage } from "../utils/imageUtils";
 import { supabase } from "../app";
 import { ApiError } from "../utils/apiError";
 
@@ -73,6 +73,7 @@ export const createAchievement = async (req: Request, res: Response) => {
 
 export const updateAchievementById = async (req: Request, res: Response) => {
   const achievementId = parseInt(req.params.achievementId);
+
   if (!achievementId || isNaN(achievementId)) {
     throw new ApiError("Invalid achievement ID", 400);
   }
@@ -80,12 +81,8 @@ export const updateAchievementById = async (req: Request, res: Response) => {
   const file = req.file;
   let imageUrl: string | undefined;
 
-  if (file) {
-    imageUrl = await uploadImage(supabase, file, 'achievements');
-  }
-
   let achievementData = req.body.achievementData;
-  if (typeof achievementData === 'string') {
+  if (typeof achievementData === "string") {
     try {
       achievementData = JSON.parse(achievementData);
     } catch (e) {
@@ -99,28 +96,31 @@ export const updateAchievementById = async (req: Request, res: Response) => {
     throw new ApiError("updatedById is required", 400);
   }
 
-  if (
-    !title &&
-    !description &&
-    !achievedAt &&
-    !imageUrl &&
-    (!Array.isArray(memberIds) || memberIds.length === 0)
-  ) {
-    throw new ApiError("At least one field must be provided for update", 400);
-  }
-
   const existingAchievement = await achievementService.getAchievementById(achievementId);
   if (!existingAchievement) {
     throw new ApiError("Achievement not found", 404);
   }
 
+  if (file) {
+    imageUrl = await uploadImage(supabase, file, "achievements", existingAchievement.imageUrl);
+  }
+
+  const { memberIds: _, ...updatePayload } = achievementData;
+
   if (imageUrl) {
-    achievementData.imageUrl = imageUrl;
+    updatePayload.imageUrl = imageUrl;
+  }
+
+  const hasSomethingToUpdate =
+    title || description || achievedAt || imageUrl || (Array.isArray(memberIds) && memberIds.length > 0);
+
+  if (!hasSomethingToUpdate) {
+    throw new ApiError("At least one field (title, description, achievedAt, image, or memberIds) must be provided for update", 400);
   }
 
   const updatedAchievement = await achievementService.updateAchievementById(
     achievementId,
-    achievementData
+    updatePayload
   );
 
   if (Array.isArray(memberIds) && memberIds.length > 0) {
@@ -139,6 +139,15 @@ export const deleteAchievementById = async (req: Request, res: Response) => {
 
   if (!achievementId || isNaN(achievementId)) {
     throw new ApiError("Invalid achievement ID", 400);
+  }
+
+  const existingAchievement = await achievementService.getAchievementById(achievementId);
+  if (!existingAchievement) {
+    throw new ApiError("Achievement not found", 404);
+  }
+
+  if (existingAchievement.imageUrl) {
+    await deleteImage(supabase, existingAchievement.imageUrl);
   }
 
   await achievementService.deleteAchievementById(achievementId);

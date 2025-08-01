@@ -1,6 +1,6 @@
 import { createAchievement, getAchievements, getAchievementById, updateAchievementById, deleteAchievementById, removeMemberFromAchievement } from '../src/controllers/achievement.controller';
 import * as achievementService from '../src/services/achievement.service';
-import { uploadImage } from '../src/utils/imageUtils';
+import { uploadImage, deleteImage } from '../src/utils/imageUtils';
 import { ApiError } from '../src/utils/apiError';
 
 jest.mock('../src/app', () => ({
@@ -24,7 +24,9 @@ jest.mock('../src/routes/achievements', () => {
 
 jest.mock('../src/utils/imageUtils', () => ({
   uploadImage: jest.fn(),
+  deleteImage: jest.fn(),
 }));
+
 
 const mockedUploadImage = uploadImage as jest.Mock;
 
@@ -290,53 +292,7 @@ describe('updateAchievementById', () => {
     updatedAt: new Date(),
     createdBy: { id: 'admin_123', name: 'Admin' },
     updatedBy: null,
-    members: [
-      {
-        member: {
-          id: 'user_1',
-          name: 'User One',
-          email: 'user1@example.com',
-          profilePhoto: null,
-        },
-      },
-    ],
-  };
-
-  const updatedAchievement = {
-    ...baseAchievement,
-    title: 'Updated Title',
-    updatedById: 'admin_456',
-    updatedBy: {
-      id: 'admin_456',
-      name: 'Admin Two',
-      email: 'admin2@example.com',
-    },
-    imageUrl: 'https://example.com/uploaded/updated.png',
-    members: [
-      {
-        member: {
-          id: 'user_2',
-          name: 'User Two',
-          email: 'user2@example.com',
-          profilePhoto: null,
-        },
-      },
-    ],
-  };
-
-  const mockReq: any = {
-    params: { achievementId: '1' },
-    file: {
-      originalname: 'updated.png',
-      buffer: Buffer.from('test-image'),
-    },
-    body: {
-      achievementData: JSON.stringify({
-        title: 'Updated Title',
-        updatedById: 'admin_456',
-        memberIds: ['user_2'],
-      }),
-    },
+    members: [],
   };
 
   const mockRes: any = {
@@ -344,8 +300,25 @@ describe('updateAchievementById', () => {
     json: jest.fn(),
   };
 
-  it('should return 200 and updated achievement', async () => {
-    mockedUploadImage.mockResolvedValue('https://example.com/uploaded/updated.png');
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should update all fields successfully (200)', async () => {
+    const updatedAchievement = { ...baseAchievement, title: 'Updated', updatedById: 'admin_456' };
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      file: { originalname: 'img.png', buffer: Buffer.from('123') },
+      body: {
+        achievementData: JSON.stringify({
+          title: 'Updated',
+          updatedById: 'admin_456',
+          memberIds: ['user_2'],
+        }),
+      },
+    };
+
+    mockedUploadImage.mockResolvedValue('https://updated.com/img.png');
     jest.spyOn(achievementService, 'getAchievementById').mockResolvedValue(baseAchievement);
     jest.spyOn(achievementService, 'updateAchievementById').mockResolvedValue(updatedAchievement);
     jest.spyOn(achievementService, 'addMembersToAchievement').mockResolvedValue(undefined);
@@ -353,21 +326,135 @@ describe('updateAchievementById', () => {
     await updateAchievementById(mockReq, mockRes);
 
     expect(mockedUploadImage).toHaveBeenCalled();
-    expect(achievementService.getAchievementById).toHaveBeenCalledWith(1);
-    expect(achievementService.updateAchievementById).toHaveBeenCalledWith(1, expect.objectContaining({
-      title: 'Updated Title',
-      updatedById: 'admin_456',
-      imageUrl: 'https://example.com/uploaded/updated.png',
-    }));
-    expect(achievementService.addMembersToAchievement).toHaveBeenCalledWith(1, ['user_2']);
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(mockRes.json).toHaveBeenCalledWith({
       success: true,
       data: updatedAchievement,
     });
   });
+
+  it('should update only title', async () => {
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      body: {
+        achievementData: JSON.stringify({ title: 'New Title', updatedById: 'admin_456' }),
+      },
+    };
+
+    jest.spyOn(achievementService, 'getAchievementById').mockResolvedValue(baseAchievement);
+    jest.spyOn(achievementService, 'updateAchievementById').mockResolvedValue({
+      ...baseAchievement,
+      title: 'New Title',
+    });
+
+    await updateAchievementById(mockReq, mockRes);
+    expect(achievementService.updateAchievementById).toHaveBeenCalledWith(1, expect.objectContaining({
+      title: 'New Title',
+      updatedById: 'admin_456',
+    }));
+  });
+
+  it('should update only image', async () => {
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      file: { originalname: 'img.png', buffer: Buffer.from('abc') },
+      body: {
+        achievementData: JSON.stringify({ updatedById: 'admin_456' }),
+      },
+    };
+
+    mockedUploadImage.mockResolvedValue('https://updated.com/img.png');
+    jest.spyOn(achievementService, 'getAchievementById').mockResolvedValue(baseAchievement);
+    jest.spyOn(achievementService, 'updateAchievementById').mockResolvedValue({
+      ...baseAchievement,
+      imageUrl: 'https://updated.com/img.png',
+      updatedById: 'admin_456',
+    });
+
+    await updateAchievementById(mockReq, mockRes);
+    expect(mockedUploadImage).toHaveBeenCalled();
+  });
+
+  it('should update only memberIds', async () => {
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      body: {
+        achievementData: JSON.stringify({ updatedById: 'admin_456', memberIds: ['user_3'] }),
+      },
+    };
+
+    jest.spyOn(achievementService, 'getAchievementById').mockResolvedValue(baseAchievement);
+    jest.spyOn(achievementService, 'updateAchievementById').mockResolvedValue({
+      ...baseAchievement,
+      updatedById: 'admin_456',
+    });
+    jest.spyOn(achievementService, 'addMembersToAchievement').mockResolvedValue(undefined);
+
+    await updateAchievementById(mockReq, mockRes);
+    expect(achievementService.addMembersToAchievement).toHaveBeenCalledWith(1, ['user_3']);
+  });
+
+  it('should return 400 if updatedById is missing', async () => {
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      body: {
+        achievementData: JSON.stringify({ title: 'No Updater' }),
+      },
+    };
+
+    await expect(updateAchievementById(mockReq, mockRes)).rejects.toThrow(ApiError);
+  });
+
+  it('should return 400 if achievementId is invalid', async () => {
+    const mockReq: any = {
+      params: { achievementId: 'abc' },
+      body: {
+        achievementData: JSON.stringify({ title: 'Updated', updatedById: 'admin_456' }),
+      },
+    };
+
+    await expect(updateAchievementById(mockReq, mockRes)).rejects.toThrow(ApiError);
+  });
+
+  it('should return 404 if achievement not found', async () => {
+    const mockReq: any = {
+      params: { achievementId: '999' },
+      body: {
+        achievementData: JSON.stringify({ title: 'Missing', updatedById: 'admin_456' }),
+      },
+    };
+
+    jest.spyOn(achievementService, 'getAchievementById').mockResolvedValue(null);
+
+    await expect(updateAchievementById(mockReq, mockRes)).rejects.toThrow(ApiError);
+  });
+
+  it('should return 400 if no fields are provided for update', async () => {
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      body: {
+        achievementData: JSON.stringify({ updatedById: 'admin_456' }),
+      },
+    };
+
+    jest.spyOn(achievementService, 'getAchievementById').mockResolvedValue(baseAchievement);
+
+    await expect(updateAchievementById(mockReq, mockRes)).rejects.toThrow(ApiError);
+  });
+
+  it('should return 400 if achievementData is invalid JSON', async () => {
+    const mockReq: any = {
+      params: { achievementId: '1' },
+      body: {
+        achievementData: '{ invalid JSON }',
+      },
+    };
+
+    await expect(updateAchievementById(mockReq, mockRes)).rejects.toThrow(ApiError);
+  });
 });
 
+const mockedDeleteImage = deleteImage as jest.Mock;
 
 describe('deleteAchievementById', () => {
   it('should delete the achievement and return 200 success message', async () => {
@@ -392,14 +479,26 @@ describe('deleteAchievementById', () => {
       createdAt: new Date(),
       updatedById: null,
       updatedAt: new Date(),
+
+      createdBy: { id: 'admin_123', name: 'Admin' },
+      updatedBy: null,
+      members: [],
     };
+
+    jest
+      .spyOn(achievementService, 'getAchievementById')
+      .mockResolvedValue(mockDeletedAchievement);
 
     jest
       .spyOn(achievementService, 'deleteAchievementById')
       .mockResolvedValue(mockDeletedAchievement);
 
+    mockedDeleteImage.mockResolvedValue(undefined);
+
     await deleteAchievementById(req, res);
 
+    expect(achievementService.getAchievementById).toHaveBeenCalledWith(1);
+    expect(mockedDeleteImage).toHaveBeenCalledWith(expect.anything(), mockDeletedAchievement.imageUrl);
     expect(achievementService.deleteAchievementById).toHaveBeenCalledWith(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
