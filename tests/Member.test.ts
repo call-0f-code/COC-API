@@ -3,7 +3,7 @@ import { createAMember, updateAMember } from '../src/controllers/member.controll
 import * as memberService from '../src/services/member.service';
 import { ApiError } from '../src/utils/apiError';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { uploadImage, deleteImage } from '../src/utils/imageUtils';
+import { uploadImage } from '../src/utils/imageUtils';
 
 jest.mock('../src/db/client', () => ({
   prisma: {
@@ -71,7 +71,7 @@ describe('Member Controller - updateAMember', () => {
   it('should update member and return updated data (no image)', async () => {
     const req = {
       params: { memberId: 'abc-123' },
-      body: { github: 'https://github.com/shrutii' },
+      body: { memberData: JSON.stringify({ github: 'https://github.com/shrutii' })  },
       file: undefined,
     } as unknown as Request;
 
@@ -106,7 +106,7 @@ describe('Member Controller - updateAMember', () => {
     const handler = updateAMember(mockSupabase);
     await handler(req, res);
 
-    expect(spyUpdate).toHaveBeenCalledWith('abc-123', req.body);
+    expect(spyUpdate).toHaveBeenCalledWith('abc-123', { github: 'https://github.com/shrutii' });
     expect(spyGet).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
@@ -118,7 +118,7 @@ describe('Member Controller - updateAMember', () => {
   it('should upload new image, handle old image, update member, and return updated data', async () => {
     const req = {
       params: { memberId: 'abc-123' },
-      body: {},
+      body: { memberData: JSON.stringify({}) },
       file: { buffer: Buffer.from('fake-image-data') },
     } as unknown as Request;
 
@@ -153,7 +153,6 @@ describe('Member Controller - updateAMember', () => {
     };
 
     (uploadImage as jest.Mock)
-      .mockResolvedValueOnce(undefined) 
       .mockResolvedValueOnce('https://new.url/image.png'); 
 
     jest.spyOn(memberService, 'getDetails')
@@ -167,23 +166,16 @@ describe('Member Controller - updateAMember', () => {
     const handler = updateAMember(mockSupabase);
     await handler(req, res);
 
-    expect(uploadImage).toHaveBeenNthCalledWith(
-      1,
+    expect(uploadImage).toHaveBeenCalledWith(
       mockSupabase,
       req.file,
       'members',
       'https://old.url/image.png'
     );
 
-    expect(uploadImage).toHaveBeenNthCalledWith(
-      2,
-      mockSupabase,
-      req.file,
-      'members'
-    );
 
     expect(spyUpdate).toHaveBeenCalledWith('abc-123', {
-      profilePhoto: 'https://new.url/image.png',
+
     });
 
     expect(res.status).toHaveBeenCalledWith(200);

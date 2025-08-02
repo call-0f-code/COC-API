@@ -72,29 +72,31 @@ export const createAMember =
 // Update an existing member
 export const updateAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
-    const { memberId } = req.params;
+
+   const { memberId } = req.params;
 
     if(!memberId) throw new ApiError("No memberId provided", 400);
 
-    const body = req.body;
+    const parsedBody = JSON.parse(req.body.memberData);
+    let imageUrl: undefined | string;
 
     if (req.file) {
       const oldData = await memberService.getDetails(memberId);
       const oldImage = oldData?.profilePhoto;
 
       if(oldImage) await uploadImage(supabase, req.file, "members", oldImage);
-
-      const imageUrl = await uploadImage(supabase, req.file, "members");
-      body.profilePhoto = imageUrl;
+      else imageUrl = await uploadImage(supabase, req.file, "members");
     }
+    if (imageUrl) parsedBody.profilePhoto = imageUrl;
 
-    await memberService.updateMember(memberId, body);
+    await memberService.updateMember(memberId, parsedBody);
 
     const updatedData = await memberService.getDetails(memberId);
     res
       .status(200)
       .json({ success: true, user: updatedData });
-  };
+};
+
 
 // Get all unapproved members
 export const getUnapprovedMembers = async (req: Request, res: Response) => {
