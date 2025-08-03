@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
 import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
-import { deleteImage, uploadImage } from "../utils/imageUtils";
+import { uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
   
-  const {email, password} = req.query;
+  const {email} = req.query;
 
-  if(email && password) {
+  if(email) {
 
     const user = await memberService.getUserByEmail(email as string);
 
@@ -58,10 +58,10 @@ export const createAMember =
     const user = await memberService.createMember(
       email,
       name,
+      provider,
       password,
       passoutYear,
       imageUrl,
-      provider,
     );
 
     if (!user) throw new ApiError("Error creating user", 500);
@@ -72,29 +72,31 @@ export const createAMember =
 // Update an existing member
 export const updateAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
-    const { memberId } = req.params;
+
+   const { memberId } = req.params;
 
     if(!memberId) throw new ApiError("No memberId provided", 400);
 
-    const body = req.body;
+    const parsedBody = JSON.parse(req.body.memberData);
+    let imageUrl: undefined | string;
 
     if (req.file) {
       const oldData = await memberService.getDetails(memberId);
       const oldImage = oldData?.profilePhoto;
 
       if(oldImage) await uploadImage(supabase, req.file, "members", oldImage);
-
-      const imageUrl = await uploadImage(supabase, req.file, "members");
-      body.profilePhoto = imageUrl;
+      else imageUrl = await uploadImage(supabase, req.file, "members");
     }
+    if (imageUrl) parsedBody.profilePhoto = imageUrl;
 
-    await memberService.updateMember(memberId, body);
+    await memberService.updateMember(memberId, parsedBody);
 
     const updatedData = await memberService.getDetails(memberId);
     res
       .status(200)
       .json({ success: true, user: updatedData });
-  };
+};
+
 
 // Get all unapproved members
 export const getUnapprovedMembers = async (req: Request, res: Response) => {

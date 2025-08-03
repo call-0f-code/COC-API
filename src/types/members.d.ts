@@ -15,7 +15,5 @@ declare global {
     leetcode?: string;
     codechef?: string;
     codeforces?: string;
-    isApproved?: boolean;
-    approvedBy?: string;
   }
 }
