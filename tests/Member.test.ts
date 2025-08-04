@@ -13,10 +13,15 @@ jest.mock('../src/db/client', () => ({
       create: jest.fn(),
       delete: jest.fn(),
     },
+    account: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
+    },
   },
 }));
 
 jest.mock('../src/utils/imageUtils');
+
 const mockSupabase = {} as SupabaseClient;
 
 const mockResponse = (): Response => {
@@ -31,13 +36,14 @@ describe('Member Controller, createAMember', () => {
     jest.clearAllMocks();
   });
 
-  it('should respond with 201 and created member', async () => { 
+  it('should respond with 201 and created member', async () => {
     const req = {
       body: {
         email: 'shruti@example.com',
         name: 'Shruti',
         password: 'password123',
         passoutYear: '2026',
+        provider: 'credentials'
       },
       file: undefined,
     } as unknown as Request;
@@ -50,7 +56,7 @@ describe('Member Controller, createAMember', () => {
     const handler = createAMember(mockSupabase);
     await handler(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(201); 
+    expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({ success: true, user: mockUser });
   });
 
@@ -71,7 +77,7 @@ describe('Member Controller - updateAMember', () => {
   it('should update member and return updated data (no image)', async () => {
     const req = {
       params: { memberId: 'abc-123' },
-      body: { memberData: JSON.stringify({ github: 'https://github.com/shrutii' })  },
+      body: { memberData: JSON.stringify({ github: 'https://github.com/shrutii' }) },
       file: undefined,
     } as unknown as Request;
 
@@ -81,10 +87,10 @@ describe('Member Controller - updateAMember', () => {
       id: '123',
       name: 'Test User',
       email: 'test@example.com',
+      github: 'https://github.com/shrutii',
+      profilePhoto: null,
       phone: null,
       bio: null,
-      profilePhoto: null,
-      github: 'https://github.com/shrutii',
       linkedin: null,
       twitter: null,
       leetcode: null,
@@ -100,14 +106,14 @@ describe('Member Controller - updateAMember', () => {
       updatedAt: new Date(),
     };
 
-    const spyUpdate = jest.spyOn(memberService, 'updateMember').mockResolvedValue(updatedMember);
-    const spyGet = jest.spyOn(memberService, 'getDetails').mockResolvedValue(updatedMember);
+    jest.spyOn(memberService, 'updateMember').mockResolvedValue(updatedMember);
+    jest.spyOn(memberService, 'getDetails').mockResolvedValue(updatedMember);
 
     const handler = updateAMember(mockSupabase);
     await handler(req, res);
 
-    expect(spyUpdate).toHaveBeenCalledWith('abc-123', { github: 'https://github.com/shrutii' });
-    expect(spyGet).toHaveBeenCalledTimes(1);
+    expect(memberService.updateMember).toHaveBeenCalledWith('abc-123', { github: 'https://github.com/shrutii' });
+    expect(memberService.getDetails).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -152,15 +158,13 @@ describe('Member Controller - updateAMember', () => {
       profilePhoto: 'https://new.url/image.png',
     };
 
-    (uploadImage as jest.Mock)
-      .mockResolvedValueOnce('https://new.url/image.png'); 
+    (uploadImage as jest.Mock).mockResolvedValueOnce('https://new.url/image.png');
 
     jest.spyOn(memberService, 'getDetails')
-      .mockResolvedValueOnce(oldMember) 
-      .mockResolvedValueOnce(updatedMember); 
+      .mockResolvedValueOnce(oldMember)
+      .mockResolvedValueOnce(updatedMember);
 
-    const spyUpdate = jest
-      .spyOn(memberService, 'updateMember')
+    jest.spyOn(memberService, 'updateMember')
       .mockResolvedValue(updatedMember);
 
     const handler = updateAMember(mockSupabase);
@@ -173,9 +177,7 @@ describe('Member Controller - updateAMember', () => {
       'https://old.url/image.png'
     );
 
-
-    expect(spyUpdate).toHaveBeenCalledWith('abc-123', {
-
+    expect(memberService.updateMember).toHaveBeenCalledWith('abc-123', {
     });
 
     expect(res.status).toHaveBeenCalledWith(200);
