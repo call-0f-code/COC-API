@@ -103,15 +103,25 @@ export const updateInterviewById = async (req: Request, res: Response) => {
 
 export const deleteInterviewById = async (req: Request, res: Response) => {
   const interviewId = parseInt(req.params.id);
+  const { memberId } = req.body;
 
   if (!interviewId) {
     throw new ApiError("Invalid interview ID", 400);
+  }
+
+  if (!memberId) {
+    throw new ApiError("Member ID is required for verification", 400);
   }
 
   const existingInterview = await interviewService.getInterviewById(interviewId);
 
   if (!existingInterview) {
     throw new ApiError("Interview experience not found", 404);
+  }
+
+  
+  if (existingInterview.memberId !== memberId) {
+    throw new ApiError("You are not authorized to delete this interview", 403);
   }
 
   await interviewService.deleteInterviewById(interviewId);
@@ -121,5 +131,4 @@ export const deleteInterviewById = async (req: Request, res: Response) => {
     message: "Interview experience deleted successfully",
   });
 };
-
 
