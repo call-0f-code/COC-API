@@ -90,6 +90,8 @@ echo "SUPABASE_URL=$api_url"
 echo "SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
 
 # Start Docker development container
+print_status "🐳 Building Docker image for coc-api-dev..."
+docker compose build coc-api-dev
 print_status "🐳 Starting Docker development container..."
 docker compose up -d coc-api-dev
 
