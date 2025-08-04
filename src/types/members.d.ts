@@ -15,5 +15,6 @@ declare global {
     leetcode?: string;
     codechef?: string;
     codeforces?: string;
+    password?: string
   }
 }

@@ -46,7 +46,7 @@ export const createAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
     const {email, name, password, passoutYear, provider} = req.body;
 
-    if (!email || !name || !password || !passoutYear) {
+    if (!email || !name || !password || !passoutYear || !provider) {
       throw new ApiError("Required fields absent", 400);
     }
 
