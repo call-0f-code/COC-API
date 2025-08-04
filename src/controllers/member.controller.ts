@@ -3,6 +3,7 @@ import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
 import { uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { password } from "bun";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
@@ -46,7 +47,7 @@ export const createAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
     const {email, name, password, passoutYear, provider} = req.body;
 
-    if (!email || !name || !password || !passoutYear) {
+    if (!email || !name || !password || !passoutYear || !provider) {
       throw new ApiError("Required fields absent", 400);
     }
 
