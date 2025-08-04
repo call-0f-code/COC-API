@@ -18,7 +18,7 @@ print_error() {
 
 # Stop Docker containers
 print_status "🐳 Stopping Docker containers..."
-if docker compose ps coc-api-dev | grep -q "Up"; then
+if docker compose ps --services --filter "status=running" | grep -q "^coc-api-dev$"; then
     docker compose down
     echo "✅ Docker containers stopped"
 else
