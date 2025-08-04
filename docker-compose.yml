@@ -30,8 +30,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DATABASE_URL=postgresql://postgres:postgres@supabase_db_COC-API:5432/postgres
-      - DIRECT_URL=postgresql://postgres:postgres@supabase_db_COC-API:5432/postgres
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
       - SUPABASE_URL=http://127.0.0.1:54321
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - ALLOWED_ORIGINS=*
