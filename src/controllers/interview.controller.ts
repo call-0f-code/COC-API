@@ -82,7 +82,7 @@ export const updateInterviewById = async (req: Request, res: Response) => {
   }
 
   if (existingInterview.memberId !== memberId) {
-    throw new ApiError("You are not authorized to update this interview experience", 401);
+    throw new ApiError("You are not authorized to update this interview experience", 403);
   }
 
   const updatedInterview = await interviewService.updateInterviewById(interviewId, {
@@ -121,7 +121,7 @@ export const deleteInterviewById = async (req: Request, res: Response) => {
 
   
   if (existingInterview.memberId !== memberId) {
-    throw new ApiError("You are not authorized to delete this interview", 401);
+    throw new ApiError("You are not authorized to delete this interview", 403);
   }
 
   await interviewService.deleteInterviewById(interviewId);

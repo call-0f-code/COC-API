@@ -381,7 +381,7 @@ describe('deleteInterviewById', () => {
     await expect(deleteInterviewById(req, res)).rejects.toThrow(ApiError);
   });
 
-  it('should throw 401 if memberId does not match', async () => {
+  it('should throw 403 if memberId does not match', async () => {
     const req: any = {
       params: { id: '1' },
       body: { memberId: 'wrong_user' },
