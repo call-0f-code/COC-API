@@ -11,9 +11,6 @@ export const getUserByEmail = async(email: string) => {
       isApproved: true,
       isManager: true,
       accounts: {
-        where: {
-          provider: 'credentials',
-        },
         select: {
           password: true
         }
@@ -42,9 +39,9 @@ export const createMember = async (
   email: string,
   name: string,
   provider: "google" | "github" | "credentials",
+  password?: string,
   passoutYear?: number,
   imageUrl?: string,
-  password?: string
 ) => {
   const newMember = await prisma.member.create({
     data: {
