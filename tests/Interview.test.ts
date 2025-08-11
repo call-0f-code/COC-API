@@ -309,11 +309,14 @@ describe('updateInterviewById', () => {
 
 
 describe('deleteInterviewById', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('should return 200 and success message', async () => {
     const req: any = {
-      params: {
-        id: '1',
-      },
+      params: { id: '1' },
+      body: { memberId: 'user_123' },
     };
 
     const res: any = {
@@ -331,13 +334,8 @@ describe('deleteInterviewById', () => {
       memberId: 'user_123',
     };
 
-    jest
-      .spyOn(interviewService, 'getInterviewById')
-      .mockResolvedValue(mockInterview);
-
-    jest
-      .spyOn(interviewService, 'deleteInterviewById')
-      .mockResolvedValue();
+    jest.spyOn(interviewService, 'getInterviewById').mockResolvedValue(mockInterview);
+    jest.spyOn(interviewService, 'deleteInterviewById').mockResolvedValue();
 
     await deleteInterviewById(req, res);
 
@@ -351,22 +349,57 @@ describe('deleteInterviewById', () => {
   it('should throw 400 for invalid interview ID', async () => {
     const req: any = {
       params: { id: 'invalid' },
+      body: { memberId: 'user_123' },
     };
 
     const res: any = {};
+
+    await expect(deleteInterviewById(req, res)).rejects.toThrow(ApiError);
+  });
+
+  it('should throw 400 if memberId is missing', async () => {
+    const req: any = {
+      params: { id: '1' },
+      body: {},
+    };
+
+    const res: any = {};
+
     await expect(deleteInterviewById(req, res)).rejects.toThrow(ApiError);
   });
 
   it('should throw 404 if interview not found', async () => {
     const req: any = {
       params: { id: '999' },
+      body: { memberId: 'user_123' },
     };
 
     const res: any = {};
 
-    jest
-      .spyOn(interviewService, 'getInterviewById')
-      .mockResolvedValue(null);
+    jest.spyOn(interviewService, 'getInterviewById').mockResolvedValue(null);
+
+    await expect(deleteInterviewById(req, res)).rejects.toThrow(ApiError);
+  });
+
+  it('should throw 403 if memberId does not match', async () => {
+    const req: any = {
+      params: { id: '1' },
+      body: { memberId: 'wrong_user' },
+    };
+
+    const res: any = {};
+
+    const mockInterview = {
+      id: 1,
+      company: 'Google',
+      role: 'SDE',
+      verdict: Verdict.Selected,
+      content: 'Nice',
+      isAnonymous: false,
+      memberId: 'user_123',
+    };
+
+    jest.spyOn(interviewService, 'getInterviewById').mockResolvedValue(mockInterview);
 
     await expect(deleteInterviewById(req, res)).rejects.toThrow(ApiError);
   });
