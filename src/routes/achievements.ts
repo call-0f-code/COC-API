@@ -20,7 +20,7 @@ export function parseCreateAchievementData(req: Request, res: Response, next: Ne
 
 export default function acheivementsRouter(upload: Multer, supabase: SupabaseClient) {
     const router = express.Router();
-
+    
 
     /**
    * @api {get} /achievements Get all achievements

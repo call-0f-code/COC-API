@@ -1,13 +1,8 @@
 import express from 'express';
 import * as interviewCtrl from '../controllers/interview.controller';
-import { supabase } from '../app';
-import { Multer } from 'multer';
-import { NextFunction } from 'express-serve-static-core';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 
-
-export default function interviewRouter(upload: Multer, supabase: SupabaseClient) {
+export default function interviewRouter() {
     const router = express.Router();
 
     /**
@@ -106,7 +101,7 @@ export default function interviewRouter(upload: Multer, supabase: SupabaseClient
    * @apiParam (Path Params) {Number} id Interview ID to delete
    *
    * @apiSuccess {String} message Deletion confirmation
-   *
+   * @apiBody (Request Body) {UUID} memberId Member ID of the owner
    * @apiError (400) BadRequest Invalid interview ID
    * @apiError (404) NotFound Interview not found
    * @apiError (500) InternalServerError Internal server error

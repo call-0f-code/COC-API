@@ -17,7 +17,7 @@ export default function routes(upload: Multer, supabase: SupabaseClient) {
 
   router.use('/achievements' ,acheivementsRouter(upload, supabase));
   
-  router.use('/interviews', interviewRouter(upload, supabase));
+  router.use('/interviews', interviewRouter());
  
   router.use('/topics',topicRouter());
 
