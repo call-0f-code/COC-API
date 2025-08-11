@@ -1,4 +1,3 @@
-// src/utils/apiError.ts
 import { Request, Response, NextFunction } from "express";
 
 /**
@@ -17,9 +16,7 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Standard structure for API error responses
- */
+
 interface ErrorResponse {
   error: boolean;
   message: string;
