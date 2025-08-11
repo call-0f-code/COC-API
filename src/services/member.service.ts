@@ -68,10 +68,22 @@ export const updateMember = async (
   id: string,
   payload: UpdateMemberPayload
 ) => {
-  const { name, password, ...rest } = payload;
+  const { name, ...rest } = payload;
 
-  if (password) {
-    const account = await prisma.account.findFirst({
+  const dataToUpdate = Object.fromEntries(
+    Object.entries({ name, ...rest }).filter(([_, v]) => v !== undefined)
+  );
+
+  if (JSON.stringify(dataToUpdate) === "{}") throw new ApiError("No fields passed", 400);
+
+  return await prisma.member.update({
+    where: { id },
+    data: dataToUpdate,
+  });
+};
+
+export const updatePassword = async(id: string, password: string) => {
+  const account = await prisma.account.findFirst({
       where: { memberId: id },
     });
 
@@ -81,19 +93,7 @@ export const updateMember = async (
       where: { id: account.id },
       data: { password }, 
     });
-  }
-
-  const dataToUpdate = Object.fromEntries(
-    Object.entries({ name, ...rest }).filter(([_, v]) => v !== undefined)
-  );
-
-  if (JSON.stringify(dataToUpdate) === "{}" && !password) throw new ApiError("No fields passed", 400);
-
-  return await prisma.member.update({
-    where: { id },
-    data: dataToUpdate,
-  });
-};
+}
 
 export const unapprovedMembers = async () => {
   return await prisma.member.findMany({

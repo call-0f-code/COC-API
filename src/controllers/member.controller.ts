@@ -89,7 +89,8 @@ export const updateAMember =
     }
     if (imageUrl) parsedBody.profilePhoto = imageUrl;
 
-    await memberService.updateMember(memberId, parsedBody);
+    if(parsedBody.password) await memberService.updatePassword(memberId, parsedBody.password);
+    else await memberService.updateMember(memberId, parsedBody);
 
     const updatedData = await memberService.getDetails(memberId);
     res
