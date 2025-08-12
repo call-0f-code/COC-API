@@ -66,32 +66,34 @@ export const createMember = async (
 
 export const updateMember = async (
   id: string,
-  payload: UpdateMemberPayload,
+  payload: UpdateMemberPayload
 ) => {
   const { name, ...rest } = payload;
 
-  const member = await prisma.member.findUnique({
-    where: {
-      id: id,
-    },
-  });
-
-  if (!member) {
-    throw new ApiError("Member not found", 404);
-  }
-
   const dataToUpdate = Object.fromEntries(
-    Object.entries(rest).filter(([_, v]) => v !== undefined),
+    Object.entries({ name, ...rest }).filter(([_, v]) => v !== undefined)
   );
 
-  if (JSON.stringify(dataToUpdate) === "{}")
-    throw new ApiError("No fields passed", 400);
+  if (JSON.stringify(dataToUpdate) === "{}") throw new ApiError("No fields passed", 400);
 
   return await prisma.member.update({
     where: { id },
     data: dataToUpdate,
   });
 };
+
+export const updatePassword = async(id: string, password: string) => {
+  const account = await prisma.account.findFirst({
+      where: { memberId: id },
+    });
+
+    if (!account) throw new ApiError("Associated account not found", 404);
+
+    return await prisma.account.update({
+      where: { id: account.id },
+      data: { password }, 
+    });
+}
 
 export const unapprovedMembers = async () => {
   return await prisma.member.findMany({
