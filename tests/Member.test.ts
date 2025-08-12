@@ -186,4 +186,52 @@ describe('Member Controller - updateAMember', () => {
       user: updatedMember,
     });
   });
+
+   it('should update password when password is provided in memberData', async () => {
+    const req = {
+      params: { memberId: 'abc-123' },
+      body: { memberData: JSON.stringify({ password: 'newSecurePass123' }) },
+      file: undefined,
+    } as unknown as Request;
+
+    const res = mockResponse();
+
+    const updatedMember = {
+      id: '123',
+      name: 'Updated User',
+      email: 'updated@example.com',
+      profilePhoto: null,
+      github: null,
+      phone: null,
+      bio: null,
+      linkedin: null,
+      twitter: null,
+      leetcode: null,
+      codeforces: null,
+      codechef: null,
+      gfg: null,
+      geeksforgeeks: null,
+      passoutYear: new Date('2025-05-31'),
+      isManager: false,
+      isApproved: false,
+      approvedById: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Mock updatePassword and getDetails
+    jest.spyOn(memberService, 'updatePassword').mockResolvedValue({} as any);
+    jest.spyOn(memberService, 'getDetails').mockResolvedValue(updatedMember);
+
+    const handler = updateAMember(mockSupabase);
+    await handler(req, res);
+
+    expect(memberService.updatePassword).toHaveBeenCalledWith('abc-123', 'newSecurePass123');
+    expect(memberService.getDetails).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      user: updatedMember,
+    });
+  });
 });
