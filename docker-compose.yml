@@ -1,0 +1,72 @@
+services:
+  # API Service
+  coc-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production  # Use 'development' for dev mode
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    restart: unless-stopped
+    networks:
+      - coc-network
+
+  # Development service (optional)
+  coc-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - SUPABASE_URL=http://127.0.0.1:54321
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=*
+    volumes:
+      - ./src:/app/src:ro  # Mount source for live reload
+      - ./prisma:/app/prisma:ro
+    restart: unless-stopped
+    profiles:
+      - dev
+    networks:
+      - coc-network
+      - supabase_network_COC-API
+
+networks:
+  coc-network:
+    driver: bridge
+  supabase_network_COC-API:
+    external: true
+
+# For local development with database (if needed)
+# Uncomment if you want to run a local PostgreSQL instead of Supabase
+# 
+# services:
+#   postgres:
+#     image: postgres:15-alpine
+#     environment:
+#       POSTGRES_DB: coc_db
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: password
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     networks:
+#       - coc-network
+# 
+# volumes:
+#   postgres_data: 

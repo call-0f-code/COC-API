@@ -11,6 +11,16 @@ import membersRouter from './members'
 
 export default function routes(upload: Multer, supabase: SupabaseClient) {
   const router = Router();
+  
+  router.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'OK', 
+      message: 'COC API is running',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
   router.use('/members', membersRouter(upload, supabase))
 
   router.use('/projects', projectsRouter(upload, supabase))
