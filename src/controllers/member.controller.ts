@@ -46,7 +46,7 @@ export const createAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
     const {email, name, password, passoutYear, provider} = req.body;
 
-    if (!email || !name || !password || !passoutYear) {
+    if (!email || !name || !password || !passoutYear || !provider) {
       throw new ApiError("Required fields absent", 400);
     }
 
@@ -89,7 +89,8 @@ export const updateAMember =
     }
     if (imageUrl) parsedBody.profilePhoto = imageUrl;
 
-    await memberService.updateMember(memberId, parsedBody);
+    if(parsedBody.password) await memberService.updatePassword(memberId, parsedBody.password);
+    else await memberService.updateMember(memberId, parsedBody);
 
     const updatedData = await memberService.getDetails(memberId);
     res
