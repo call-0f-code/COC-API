@@ -16,6 +16,7 @@ model Member {
   id            String   @id @default(uuid())
   name          String
   email         String   @unique
+  birth_date    DateTime? @db.Date
   phone         String? // Single phone number
   bio           String?
   profilePhoto  String? // URL to profile photo

@@ -2,6 +2,34 @@ import { prisma } from "../db/client";
 
 export const getAchievements = async () => {
   return await prisma.achievement.findMany({
+    include: {
+
+      members: {
+        select: {
+          member: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profilePhoto: true,
+            },
+          },
+        },
+      },
+
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      updatedBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
     orderBy: {
       achievedAt: "desc",
     },

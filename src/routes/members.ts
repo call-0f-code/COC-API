@@ -85,7 +85,7 @@ export default function membersRouter(
    *   -F "name=John Doe" \
    *   -F "password=securePass123" \
    *   -F "passoutYear=2026" \
-   *   -F "provider=local" \
+   *   -F "provider=credentials" \
    *   http://localhost:3000/members
    */
   router.post("/", upload.single("file"), memberCtrl.createAMember(supabase));
