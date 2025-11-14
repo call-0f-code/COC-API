@@ -3,13 +3,21 @@ import * as interviewService from "../services/interview.service";
 import { ApiError } from "../utils/apiError";
 
 export const getInterviews = async (req: Request, res: Response) => {
-  const interviews = await interviewService.getInterviews();
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-  res.status(200).json({
+  const { interviews, total } = await interviewService.getInterviews(page, limit);
+
+  return res.status(200).json({
     success: true,
-    data: interviews,
+    data: interviews,     
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
   });
 };
+
 
 export const getInterviewById = async (req: Request, res: Response) => {
   const interviewId = parseInt(req.params.id);

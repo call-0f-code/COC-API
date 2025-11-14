@@ -1,12 +1,38 @@
 import { prisma } from "../db/client"
 
-export const getInterviews = async () => {
-  return await prisma.interviewExperience.findMany({
-    orderBy: {
-      id: "desc",
-    },
-  });
+export const getInterviews = async (page: number = 1, limit: number = 10) => {
+  const skip = (page - 1) * limit;
+
+  const [interviews, total] = await Promise.all([
+    prisma.interviewExperience.findMany({
+      skip,
+      take: limit,
+      include: {
+        member: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: true,
+          },
+        },
+      },
+      orderBy: {
+        id: "desc",
+      },
+    }),
+
+    prisma.interviewExperience.count(),
+  ]);
+
+  const formattedInterview = interviews.map(
+    ({ isAnonymous, member, memberId, ...rest }) => {
+      return isAnonymous ? {...rest,isAnonymous} : { ...rest,isAnonymous, member }; 
+    }
+  );
+
+  return { interviews : formattedInterview , total };
 };
+
 
 export const getInterviewById = async (interviewId: number) => {
   return await prisma.interviewExperience.findUnique({
