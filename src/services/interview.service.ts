@@ -24,13 +24,13 @@ export const getInterviews = async (page: number = 1, limit: number = 10) => {
     prisma.interviewExperience.count(),
   ]);
 
-  const formattedInterview = interviews.map(
+  const formattedInterviews = interviews.map(
     ({ isAnonymous, member, memberId, ...rest }) => {
       return isAnonymous ? {...rest,isAnonymous} : { ...rest,isAnonymous, member }; 
     }
   );
 
-  return { interviews : formattedInterview , total };
+  return { interviews : formattedInterviews , total };
 };
 
 
