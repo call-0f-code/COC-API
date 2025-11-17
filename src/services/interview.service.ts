@@ -1,10 +1,16 @@
 import { prisma } from "../db/client"
 
-export const getInterviews = async (page: number = 1, limit: number = 10) => {
+export const getInterviews = async (page: number = 1, limit: number = 10, verdict : string = "All") => {
   const skip = (page - 1) * limit;
+
+  const where : any = {}
+  if(verdict !== "All"){
+    where.verdict = verdict
+  }
 
   const [interviews, total] = await Promise.all([
     prisma.interviewExperience.findMany({
+      where,
       skip,
       take: limit,
       include: {
@@ -21,7 +27,7 @@ export const getInterviews = async (page: number = 1, limit: number = 10) => {
       },
     }),
 
-    prisma.interviewExperience.count(),
+    prisma.interviewExperience.count({where}),
   ]);
 
   const formattedInterviews = interviews.map(
