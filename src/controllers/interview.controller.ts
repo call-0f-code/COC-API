@@ -3,13 +3,28 @@ import * as interviewService from "../services/interview.service";
 import { ApiError } from "../utils/apiError";
 
 export const getInterviews = async (req: Request, res: Response) => {
-  const interviews = await interviewService.getInterviews();
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-  res.status(200).json({
+  if(isNaN(page) || page<1){
+    throw new ApiError("Page must be greater than or equal to 1",400);
+  }
+  if(isNaN(limit) || limit<1 || limit>100){
+    throw new ApiError("Limit must be between 1 to 100",400)
+  }
+
+  const { interviews, total } = await interviewService.getInterviews(page, limit);
+
+  return res.status(200).json({
     success: true,
-    data: interviews,
+    data: interviews,     
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
   });
 };
+
 
 export const getInterviewById = async (req: Request, res: Response) => {
   const interviewId = parseInt(req.params.id);
