@@ -5,7 +5,12 @@ import { Verdict } from '../src/generated/prisma';
 
 describe('getInterviews', () => {
   it('should return 200 and all interviews', async () => {
-    const req: any = {};
+    const req: any = {
+      query: {
+        page: '1',
+        limit: '10',
+      },
+    };
     const res: any = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
@@ -19,13 +24,22 @@ describe('getInterviews', () => {
         verdict: Verdict.Selected,
         content: 'Great experience',
         isAnonymous: false,
-        memberId: 'member123',
+        member: {
+          id: 'member123',
+          name: 'John Doe',
+          profilePhoto: null,
+        },
       },
     ];
 
+    const mockReturn = {
+      interviews: mockInterviews,
+      total: 1,
+    };
+
     jest
       .spyOn(interviewService, 'getInterviews')
-      .mockResolvedValue(mockInterviews);
+      .mockResolvedValue(mockReturn);
 
     await getInterviews(req, res);
 
@@ -33,10 +47,13 @@ describe('getInterviews', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: mockInterviews,
+      page: 1,
+      limit: 10,
+      total: 1,
+      totalPages: Math.ceil(1 / 10),
     });
   });
 });
-
 
 describe('getInterviewById', () => {
   it('should return 200 and the interview if found', async () => {
