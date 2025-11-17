@@ -6,6 +6,13 @@ export const getInterviews = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 
+  if(isNaN(page) || page<1){
+    throw new ApiError("Page must me greater than or equal to 1",400);
+  }
+  if(isNaN(limit) || limit<1 || limit>100){
+    throw new ApiError("Limit must me between 1 to 100",400)
+  }
+
   const { interviews, total } = await interviewService.getInterviews(page, limit);
 
   return res.status(200).json({
