@@ -27,7 +27,7 @@ export const getInterviews = async (page: number = 1, limit: number = 10, verdic
       },
     }),
 
-    prisma.interviewExperience.count(),
+    prisma.interviewExperience.count({where}),
   ]);
 
   const formattedInterviews = interviews.map(
