@@ -5,6 +5,7 @@ import { ApiError } from "../utils/apiError";
 export const getInterviews = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
+  const verdict = (req.query.verdict as string) || "All";
 
   if(isNaN(page) || page<1){
     throw new ApiError("Page must be greater than or equal to 1",400);
@@ -13,13 +14,14 @@ export const getInterviews = async (req: Request, res: Response) => {
     throw new ApiError("Limit must be between 1 to 100",400)
   }
 
-  const { interviews, total } = await interviewService.getInterviews(page, limit);
+  const { interviews, total } = await interviewService.getInterviews(page, limit, verdict);
 
   return res.status(200).json({
     success: true,
     data: interviews,     
     page,
     limit,
+    verdict,
     total,
     totalPages: Math.ceil(total / limit),
   });
