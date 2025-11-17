@@ -49,11 +49,13 @@ describe('getInterviews', () => {
       data: mockInterviews,
       page: 1,
       limit: 10,
+      verdict: "All",      
       total: 1,
       totalPages: Math.ceil(1 / 10),
     });
   });
 });
+
 
 describe('getInterviewById', () => {
   it('should return 200 and the interview if found', async () => {
