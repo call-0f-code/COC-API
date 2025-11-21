@@ -180,7 +180,9 @@ describe('Member Controller - updateAMember', () => {
     );
 
     expect(memberService.updateMember).toHaveBeenCalledWith('abc-123', {
+      profilePhoto: 'https://new.url/image.png',
     });
+
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
