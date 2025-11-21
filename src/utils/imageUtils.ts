@@ -37,13 +37,11 @@ export async function uploadImage(
   }
   const ext = mime.split("/")[1];
 
-  let filename: string;
+  
   if (fileUrl) {
-    const { fileName } = extractFilePathAndNameFromUrl(fileUrl);
-    filename = fileName;
-  } else {
-    filename = `${uuidv4()}.${ext}`;
+    await deleteImage(supabase,fileUrl);
   }
+  const filename:string =  `${uuidv4()}.${ext}`;
 
   const filePath = `${folder}/${filename}`;
 
