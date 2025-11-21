@@ -2,7 +2,6 @@ import { uploadImage, deleteImage } from "../src/utils/imageUtils";
 import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { ApiError } from "../src/utils/apiError";
 import { v4 as uuidv4 } from "uuid";
-import { error } from "console";
 
 jest.mock("uuid");
 const mockedUuid = uuidv4 as jest.Mock;
@@ -21,8 +20,7 @@ describe("imageUtils", () => {
     storageMock = {
       from: jest.fn().mockReturnThis(),
       upload: jest.fn(),
-      getPublicUrl: jest.fn(),
-      deleteImage: jest.fn(), 
+      getPublicUrl: jest.fn(), 
       remove: jest.fn(),
     };
 
