@@ -74,7 +74,7 @@ export const updateAMember =
   (supabase: SupabaseClient) => async (req: Request, res: Response) => {
 
    const { memberId } = req.params;
-
+  
     if(!memberId) throw new ApiError("No memberId provided", 400);
 
     const parsedBody = JSON.parse(req.body.memberData);
@@ -84,7 +84,7 @@ export const updateAMember =
       const oldData = await memberService.getDetails(memberId);
       const oldImage = oldData?.profilePhoto;
 
-      if(oldImage) await uploadImage(supabase, req.file, "members", oldImage);
+      if(oldImage) imageUrl = await uploadImage(supabase, req.file, "members", oldImage);
       else imageUrl = await uploadImage(supabase, req.file, "members");
     }
     if (imageUrl) parsedBody.profilePhoto = imageUrl;
