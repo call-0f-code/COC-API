@@ -37,13 +37,7 @@ export async function uploadImage(
   }
   const ext = mime.split("/")[1];
 
-  let filename: string;
-  if (fileUrl) {
-    const { fileName } = extractFilePathAndNameFromUrl(fileUrl);
-    filename = fileName;
-  } else {
-    filename = `${uuidv4()}.${ext}`;
-  }
+  const filename:string =  `${uuidv4()}.${ext}`;
 
   const filePath = `${folder}/${filename}`;
 
@@ -64,6 +58,10 @@ export async function uploadImage(
 
   if (!urlData?.publicUrl) {
     throw new ApiError("Failed to get public URL", 500);
+  }
+
+  if (fileUrl) {
+    await deleteImage(supabase, fileUrl);
   }
 
   return urlData.publicUrl;

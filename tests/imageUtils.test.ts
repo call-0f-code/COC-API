@@ -20,7 +20,7 @@ describe("imageUtils", () => {
     storageMock = {
       from: jest.fn().mockReturnThis(),
       upload: jest.fn(),
-      getPublicUrl: jest.fn(),
+      getPublicUrl: jest.fn(), 
       remove: jest.fn(),
     };
 
@@ -61,6 +61,7 @@ describe("imageUtils", () => {
       storageMock.getPublicUrl.mockReturnValue({
         data: { publicUrl: "https://public.url/existing.png" },
       });
+      storageMock.remove.mockReturnValue({error:null});
 
       const url = await uploadImage(
         mockSupabase as SupabaseClient,
@@ -70,7 +71,7 @@ describe("imageUtils", () => {
       );
       // Should use filename 'existing.png' instead of generating with uuid
       expect(storageMock.upload).toHaveBeenCalledWith(
-        "folder/existing.png",
+        "folder/test-uuid.png",
         dummyFile.buffer,
         { contentType: dummyFile.mimetype, upsert: true },
       );
