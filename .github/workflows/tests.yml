@@ -37,8 +37,8 @@ jobs:
         run: bun jest
   skip-tests:
     if: github.base_ref != 'main'
-    runs-on: ubuntu-lastest
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Skip tests for non-main Prisma
+      - name: Skip tests for non-main PR
         run: echo "Tests skipped - PR is not targeting main branch"
