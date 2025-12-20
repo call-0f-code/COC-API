@@ -2,11 +2,10 @@ name: Run Tests
 
 on:
   pull_request:
-    branches:
-      - main
 
 jobs:
   test:
+    if: github.base_ref == 'main'
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +15,7 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.2.18" # or pin to whatever Bun version you need
+          bun-version: "1.2.18" 
 
       - name: Cache Bun dependencies
         uses: actions/cache@v4
@@ -36,3 +35,10 @@ jobs:
 
       - name: Run tests
         run: bun jest
+  skip-tests:
+    if: github.base_ref != 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Skip tests for non-main PR
+        run: echo "Tests skipped - PR is not targeting main branch"
