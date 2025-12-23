@@ -7,7 +7,8 @@ import { errorHandler } from "./utils/apiError";
 import { createClient } from "@supabase/supabase-js";
 import config from "./config";
 import path from "path";
-
+import { logger } from "./utils/logger";
+import morgan from "morgan";
 // Initialize Supabase client for storage operations
 export const supabase = createClient(
   config.SUPABASE_URL,
@@ -15,8 +16,12 @@ export const supabase = createClient(
 );
 
 const app = express();
-
-
+class LoggerStream {
+    write(message: string) {
+        logger.info(message.substring(0, message.lastIndexOf('\n')));
+    }
+}
+app.use(morgan('combined', { stream: new LoggerStream()}));
 app.use(
   cors({
     origin: config.ALLOWED_ORIGINS || "*",

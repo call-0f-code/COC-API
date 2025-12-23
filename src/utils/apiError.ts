@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-
+import { logger } from "./logger";
 /**
  * A custom error type that carries an HTTP status code.
  */
@@ -40,7 +40,7 @@ export function errorHandler(
     error: true,
     message,
   };
-
+  logger.error('ERROR 🔥', err);
   // Include stack trace in development for debugging
   if (process.env.NODE_ENV === "development" && err instanceof Error) {
     responseBody.stack = err.stack;
