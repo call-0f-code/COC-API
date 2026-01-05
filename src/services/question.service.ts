@@ -1,5 +1,5 @@
-import { prisma } from "../db/client";
-import { Difficulty } from "../generated/prisma";
+import  prisma  from "../db/client";
+import { Difficulty } from "../generated/prisma/enums";
 
 export const getQuestionByTopicId = async (TopicId: number) => {
   return await prisma.question.findMany({

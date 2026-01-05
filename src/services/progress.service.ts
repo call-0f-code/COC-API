@@ -1,4 +1,4 @@
-import { prisma } from "../db/client";
+import  prisma  from "../db/client";
 
 export const getCompletedQuestion = async (memeberId: string) => {
   return await prisma.completedQuestion.findMany({

@@ -6,7 +6,7 @@ import {
 } from "../src/controllers/topic.controller";
 import * as topicServices from "../src/services/topic.service";
 import { ApiError } from "../src/utils/apiError";
-import { Topic } from "../src/generated/prisma";
+import { Topic } from "../src/generated/prisma/browser";
 
 beforeEach(() => {
   jest.clearAllMocks();

@@ -1,4 +1,4 @@
-import { prisma } from "../db/client";
+import prisma  from "../db/client";
 import { ApiError } from "../utils/apiError";
 
 export const getUserByEmail = async(email: string) => {
