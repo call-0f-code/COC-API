@@ -1,4 +1,4 @@
-import { prisma } from "../db/client";
+import  prisma  from "../db/client";
 
 export const getAchievements = async () => {
   return await prisma.achievement.findMany({
