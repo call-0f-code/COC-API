@@ -7,7 +7,7 @@ import {
   updateQuestion,
   deleteQuestion,
 } from "../src/controllers/question.controller";
-import { Question } from "../src/generated/prisma";
+import { Question } from "../src/generated/prisma/client";
 import { ApiError } from "../src/utils/apiError";
 
 beforeEach(() => {

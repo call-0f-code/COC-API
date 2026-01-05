@@ -1,4 +1,5 @@
-import { prisma } from "../db/client"
+import prisma from "../db/client";
+
 
 export const getInterviews = async (page: number = 1, limit: number = 10, verdict : string = "All") => {
   const skip = (page - 1) * limit;
