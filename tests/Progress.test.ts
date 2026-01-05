@@ -4,7 +4,7 @@ import {
 } from "../src/controllers/progress.controller";
 import * as progressServices from "../src/services/progress.service";
 import { Request, Response } from "express";
-import { CompletedQuestion } from "../src/generated/prisma";
+import { CompletedQuestion } from "../src/generated/prisma/enums";
 import { ApiError } from "../src/utils/apiError";
 
 beforeEach(() => {
