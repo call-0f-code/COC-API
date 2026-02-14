@@ -21,12 +21,12 @@ export const prisma =
   new PrismaClient({
     adapter,
     log:
-      process.env.NODE_ENV === "development"
+      process.env.NODE_ENV === "Development"
         ? ["query", "error", "warn"]
         : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "Production") {
   globalForPrisma.prisma = prisma;
   globalForPrisma.pgPool = pool;
 }
