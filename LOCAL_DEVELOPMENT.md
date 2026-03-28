@@ -5,7 +5,7 @@ This document explains how to set up and manage the local development environmen
 ## Prerequisites
 
 - **Docker & Docker Compose**: Ensure you have Docker installed and running.
-- **PostgreSQL Client (`pg_dump`)**: The setup script uses `pg_dump` to pull data from the remote database.
+- **PostgreSQL Client (`pg_dump`)**: Optional. The current local setup prefers loading a local `seed/dump.sql` file. `pg_dump` is only required if you want to create a fresh dump from a remote database manually.
 
 ## Setup Instructions
 
@@ -23,7 +23,7 @@ Key variables for the setup script:
 
 ### 2. Run the Setup Script
 
-The `scripts/setup-local.sh` script automates the entire process:
+The `scripts/setup-local.sh` script automates the local environment bring-up. By default it will load the local `seed/dump.sql` into the local Postgres instance.
 
 ```bash
 bun run local
@@ -32,10 +32,12 @@ bun run local
 #### What the script does:
 1. **Starts Postgres**: Launches the `db` container.
 2. **Installs Extensions**: Pre-installs `pgcrypto`, `uuid-ossp`, and `pg_stat_statements` into the `public` schema.
-3. **Dumps Remote DB**: Uses `pg_dump` to create a snapshot of the production database.
-4. **Cleans the Dump**: Strips Supabase-specific extensions and patches schema references to work locally.
-5. **Seeds the Database**: Loads the cleaned dump into your local Postgres container.
-6. **Starts the API**: Launches the `api` container and waits for it to be healthy.
+3. **Loads Local Seed**: If `public` has no tables, the script loads `seed/dump.sql` into the DB. This is the default and recommended local flow.
+4. **Starts the API**: Launches the `api` container and waits for it to be healthy.
+
+Flags:
+  - `--skip-dump`: reuse existing `seed/dump.sql` (no remote dump step)
+  - `--skip-seed`: skip loading the seed and just start containers
 
 ### 3. Useful Commands
 
@@ -48,11 +50,5 @@ bun run local
 
 ## Troubleshooting
 
-### "Tenant or user not found" during dump
-This usually means your `SESSION_POOLER` username is just `postgres`. Supabase requires the format `postgres.PROJECT_REF`.
-
 ### Tables not in `public` schema
 The script automatically patches the dump to ensure tables are placed in the `public` schema. If you manually imported a dump, ensure you've installed the required extensions first.
-
-### Re-seeding
-The script skips seeding if it detects existing tables in the `public` schema. To force a re-seed, run `docker compose down -v` before running the setup script.

@@ -15,6 +15,7 @@
 #   --skip-seed   Skip seeding entirely (just start containers)
 # =============================================================================
 
+!/usr/bin/env bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -101,112 +102,20 @@ info "Extensions installed."
 
 
 # ========================================================
-# 4. Check if DB already has data (skip seeding if so)
+# 4. Check if seeding is required
 # ========================================================
 if [[ "$SKIP_SEED" == true ]]; then
   warn "--skip-seed passed. Skipping dump and load."
 else
-  TABLE_COUNT=$(docker compose exec -T db psql -U postgres -d coc -tAc \
-    "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null || echo "0")
-  TABLE_COUNT="${TABLE_COUNT//[[:space:]]/}"
-
-  if [[ "$TABLE_COUNT" -gt 0 ]]; then
-    warn "Database already has $TABLE_COUNT table(s) in public schema. Skipping seed."
-    warn "To re-seed, run:  docker compose down -v  then re-run this script."
-  else
-    info "Database is empty — proceeding with seed."
-
-
-    # ======================================================
-    # 5. pg_dump remote database
-    # ======================================================
-    command -v pg_dump >/dev/null 2>&1 || error "pg_dump is not installed. Install postgresql-client and retry."
-
-    if [[ -n "${SESSION_POOLER:-}" ]]; then
-      REMOTE_URL="$SESSION_POOLER"
-      info "Using SESSION_POOLER for database dump"
-    else
-      error "Set SESSION_POOLER in $ENV_FILE"
+    mkdir -p "$SEED_DIR"
+    if [[ ! -f "$DUMP_FILE" ]]; then
+      error "$DUMP_FILE not found. Create the seed SQL at $DUMP_FILE and re-run this script."
     fi
 
-    mkdir -p "$SEED_DIR"
-
-    if [[ "$SKIP_DUMP" == true ]]; then
-      if [[ ! -f "$DUMP_FILE" ]]; then
-        error "--skip-dump was passed but $DUMP_FILE does not exist. Run without --skip-dump first."
-      fi
-      warn "Skipping pg_dump — reusing existing $DUMP_FILE"
-    else
-      info "Dumping remote database to $DUMP_FILE ..."
-      info "(This may take a moment depending on database size)"
-
-      PGDUMP_ERR_LOG="/tmp/pgdump_err_$$.log"
-      if pg_dump \
-          --no-owner \
-          --no-acl \
-          --if-exists \
-          --clean \
-          "$REMOTE_URL" \
-          > "$DUMP_FILE" 2>"$PGDUMP_ERR_LOG"; then
-        info "Dump complete: $DUMP_FILE ($(du -sh "$DUMP_FILE" | cut -f1))"
-
-        # ---- Strip Supabase-only extensions ----
-        info "Stripping Supabase-only extensions from dump..."
-        SUPABASE_EXTS="pg_graphql|pg_net|pgsodium|supabase_vault|wrappers|pg_stat_monitor|hypopg"
-
-        sed "${SED_INPLACE[@]}" -E \
-          "s#^(CREATE EXTENSION IF NOT EXISTS ($SUPABASE_EXTS).*)#-- [local] \1#g" \
-          "$DUMP_FILE"
-
-        sed "${SED_INPLACE[@]}" -E \
-          "s#^(DROP EXTENSION IF EXISTS ($SUPABASE_EXTS).*)#-- [local] \1#g" \
-          "$DUMP_FILE"
-
-
-        # Strip COMMENT ON EXTENSION for stripped extensions
-        sed "${SED_INPLACE[@]}" -E \
-          "s#^(COMMENT ON EXTENSION ($SUPABASE_EXTS) .*)#-- [local] \1#g" \
-          "$DUMP_FILE"
-        info "Supabase-only extension cleanup done."
-
-        # ---- Patch extension schema: 'extensions' -> 'public' ----
-        info "Patching extension schema references (extensions -> public)..."
-        sed "${SED_INPLACE[@]}" -E \
-          "s#WITH SCHEMA extensions#WITH SCHEMA public#g" \
-          "$DUMP_FILE"
-        info "Extension schema patch done."
-
-      else
-        DUMP_ERR="$(cat "$PGDUMP_ERR_LOG")"
-        rm -f "$DUMP_FILE" "$PGDUMP_ERR_LOG"
-        warn "pg_dump failed:"
-        warn "  $DUMP_ERR"
-        warn ""
-        if echo "$DUMP_ERR" | grep -qi "tenant or user not found"; then
-          warn "Tip: The session pooler requires username format: postgres.PROJECT_REF"
-          warn "     e.g. postgres.riqqtbuoaycwwiemnmri  (not just: postgres)"
-          warn "     Update SESSION_POOLER in $ENV_FILE."
-        elif echo "$DUMP_ERR" | grep -qi "network is unreachable\|no route to host"; then
-          warn "Tip: The host appears unreachable (IPv6-only?). Try a VPN or an IPv4 URL."
-        fi
-        warn ""
-        warn "Options:"
-        warn "  1. Fix SESSION_POOLER in $ENV_FILE"
-        warn "  2. Manually copy a dump to $DUMP_FILE and re-run with: bash scripts/setup-local.sh --skip-dump"
-        error "Aborting: cannot seed without a database dump."
-      fi
-    fi # end skip-dump
-
-
-    # ======================================================
-    # 6. Load dump into running postgres container
-    # ======================================================
-    info "Loading dump into postgres..."
+    info "Loading local seed SQL from $DUMP_FILE ..."
     docker compose exec -T db psql -U postgres -d coc < "$DUMP_FILE"
     info "Seed complete."
-
-  fi # end table count check
-fi # end skip-seed
+fi
 
 
 # ========================================================

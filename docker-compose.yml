@@ -4,8 +4,11 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+            target: development
         ports:
-            - "3000:3000"
+            - "127.0.0.1:3000:3000"
+        env_file:
+            - .env
         environment:
             NODE_ENV: development
             PORT: 3000
@@ -31,7 +34,7 @@ services:
         volumes:
             - pgdata:/var/lib/postgresql/data
         ports:
-            - "5432:5432"
+            - "127.0.0.1:5432:5432"
         healthcheck:
             test: ["CMD", "pg_isready", "-U", "postgres", "-d", "coc", "-h", "127.0.0.1", "-p", "5432"]
             interval: 5s

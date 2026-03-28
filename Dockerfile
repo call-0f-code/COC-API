@@ -37,7 +37,7 @@ RUN bunx prisma generate
 # -----------------------------
 
 
-FROM deps AS development
+FROM base AS development
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/src/generated ./src/generated
@@ -54,7 +54,7 @@ CMD ["bun", "src/server.ts"]
 # -----------------------------
 
     
-FROM deps AS production
+FROM base AS production
 
 RUN addgroup -g 1001 -S nodejs && adduser -S bunjs -u 1001
 RUN cp -r /root/.bun /usr/local/bun && chown -R bunjs:nodejs /usr/local/bun
