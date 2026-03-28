@@ -25,6 +25,12 @@ DUMP_FILE="$SEED_DIR/dump.sql"
 SKIP_DUMP=false
 SKIP_SEED=false
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  SED_INPLACE=(-i '')
+else
+  SED_INPLACE=(-i)
+fi
+
 # ---- Parse args ----
 for arg in "$@"; do
   case $arg in
@@ -148,22 +154,24 @@ else
         info "Stripping Supabase-only extensions from dump..."
         SUPABASE_EXTS="pg_graphql|pg_net|pgsodium|supabase_vault|wrappers|pg_stat_monitor|hypopg"
 
-        sed -i -E \
+        sed "${SED_INPLACE[@]}" -E \
           "s#^(CREATE EXTENSION IF NOT EXISTS ($SUPABASE_EXTS).*)#-- [local] \1#g" \
           "$DUMP_FILE"
-        sed -i -E \
+
+        sed "${SED_INPLACE[@]}" -E \
           "s#^(DROP EXTENSION IF EXISTS ($SUPABASE_EXTS).*)#-- [local] \1#g" \
           "$DUMP_FILE"
 
+
         # Strip COMMENT ON EXTENSION for stripped extensions
-        sed -i -E \
+        sed "${SED_INPLACE[@]}" -E \
           "s#^(COMMENT ON EXTENSION ($SUPABASE_EXTS) .*)#-- [local] \1#g" \
           "$DUMP_FILE"
         info "Supabase-only extension cleanup done."
 
         # ---- Patch extension schema: 'extensions' -> 'public' ----
         info "Patching extension schema references (extensions -> public)..."
-        sed -i -E \
+        sed "${SED_INPLACE[@]}" -E \
           "s#WITH SCHEMA extensions#WITH SCHEMA public#g" \
           "$DUMP_FILE"
         info "Extension schema patch done."
