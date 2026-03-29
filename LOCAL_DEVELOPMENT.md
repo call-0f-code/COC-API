@@ -32,7 +32,7 @@ bun run local
 #### What the script does:
 1. **Starts Postgres**: Launches the `db` container.
 2. **Installs Extensions**: Pre-installs `pgcrypto`, `uuid-ossp`, and `pg_stat_statements` into the `public` schema.
-3. **Loads Local Seed**: If `public` has no tables, the script loads `seed/dump.sql` into the DB. This is the default and recommended local flow.
+3. **Loads Local Seed**: The script will attempt to load `seed/dump.sql` into the DB only when there are no existing user tables present in the database. If the database already contains tables (non-system tables), the seed step will be skipped to avoid accidentally overwriting existing data. This is the default and recommended local flow.
 4. **Starts the API**: Launches the `api` container and waits for it to be healthy.
 
 Flags:

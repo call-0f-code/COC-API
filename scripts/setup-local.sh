@@ -1,3 +1,4 @@
+!/usr/bin/env bash
 # =============================================================================
 # setup-local.sh
 #
@@ -15,7 +16,6 @@
 #   --skip-seed   Skip seeding entirely (just start containers)
 # =============================================================================
 
-!/usr/bin/env bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,7 +57,7 @@ fi
 
 info "Loading environment from $ENV_FILE"
 set -o allexport
-# shellcheck disable=SC1090
+# shellcheck disable: SC1090
 source <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" | sed 's/\r//')
 set +o allexport
 
@@ -77,7 +77,7 @@ docker compose up db --build -d
 # 2. Wait for postgres to be healthy
 # ========================================================
 info "Waiting for postgres to be healthy..."
-RETRIES=20
+RETRIES=10
 until docker compose exec -T db pg_isready -U postgres -d coc -h 127.0.0.1 -p 5432 -q 2>/dev/null; do
   RETRIES=$((RETRIES - 1))
   if [[ $RETRIES -le 0 ]]; then
@@ -92,7 +92,7 @@ info "Postgres is healthy."
 # 3. Install required extensions
 # ========================================================
 info "Installing required extensions into postgres..."
-docker compose exec -T db psql -U postgres -d coc <<'EXTSQL'
+docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d coc <<'EXTSQL'
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto         WITH SCHEMA public;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"      WITH SCHEMA public;
@@ -103,6 +103,8 @@ info "Extensions installed."
 
 # ========================================================
 # 4. Check if seeding is required
+#    - If user passed --skip-seed, we skip
+#    - Otherwise, if the DB already contains user tables (non-system), skip seeding
 # ========================================================
 if [[ "$SKIP_SEED" == true ]]; then
   warn "--skip-seed passed. Skipping dump and load."
@@ -112,9 +114,21 @@ else
       error "$DUMP_FILE not found. Create the seed SQL at $DUMP_FILE and re-run this script."
     fi
 
-    info "Loading local seed SQL from $DUMP_FILE ..."
-    docker compose exec -T db psql -U postgres -d coc < "$DUMP_FILE"
-    info "Seed complete."
+    info "Checking whether database already has user tables..."
+    TABLE_COUNT=$(docker compose exec -T db psql -U postgres -d coc -t -A -c "SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema');" | tr -d '[:space:]' || true)
+
+    if [[ -z "$TABLE_COUNT" ]]; then
+      warn "Could not determine table count; proceeding with seed."
+      info "Loading local seed SQL from $DUMP_FILE ..."
+      docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d coc < "$DUMP_FILE"
+      info "Seed complete."
+    elif [[ "$TABLE_COUNT" -gt 0 ]]; then
+      warn "Database already has ${TABLE_COUNT} user tables; skipping seed."
+    else
+      info "No existing user tables found. Loading local seed SQL from $DUMP_FILE ..."
+      docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d coc < "$DUMP_FILE"
+      info "Seed complete."
+    fi
 fi
 
 
@@ -126,7 +140,7 @@ DATABASE_URL="$LOCAL_DATABASE_URL" \
   docker compose up api --build -d
 
 info "Waiting for api to be healthy..."
-RETRIES=15
+RETRIES=10
 until curl -sf http://localhost:3000/health >/dev/null 2>&1; do
   RETRIES=$((RETRIES - 1))
   if [[ $RETRIES -le 0 ]]; then
