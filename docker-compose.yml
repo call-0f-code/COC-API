@@ -16,7 +16,6 @@ services:
         volumes:
             - ./:/app:cached
             - /app/node_modules
-        command: ["bun", "src/server.ts"]
         depends_on:
             - db
         healthcheck:
