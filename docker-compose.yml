@@ -1,0 +1,45 @@
+services:
+    api:
+        image: coc-api
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: development
+        ports:
+            - "127.0.0.1:3000:3000"
+        env_file:
+            - .env
+        environment:
+            NODE_ENV: development
+            PORT: 3000
+            DATABASE_URL: "postgresql://postgres:example@db:5432/coc?sslmode=disable"
+        volumes:
+            - ./:/app:cached
+            - /app/node_modules
+        depends_on:
+            - db
+        healthcheck:
+            test: ["CMD", "curl", "-sf", "http://localhost:3000/health"]
+            interval: 30s
+            timeout: 3s
+            retries: 3
+
+    db:
+        image: postgres:17
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: example
+            POSTGRES_DB: coc
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        ports:
+            - "127.0.0.1:5432:5432"
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "postgres", "-d", "coc", "-h", "127.0.0.1", "-p", "5432"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+volumes:
+    pgdata:
+    seed-data:
