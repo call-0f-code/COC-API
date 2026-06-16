@@ -52,6 +52,8 @@ model Member {
   updatedAchievements Achievement[] @relation("AchievementUpdatedBy")
   createdProjects     Project[]     @relation("ProjectCreatedBy")
   updatedProjects     Project[]     @relation("ProjectUpdatedBy")
+  updatedSitePageContent SitePageContent[] @relation("SitePageContentUpdatedBy")
+  updatedSiteActions     SiteAction[]     @relation("SiteActionUpdatedBy")
 }
 
 model Account {
@@ -192,3 +194,28 @@ model CompletedQuestion {
 
   @@id([memberId, questionId])
 }
+
+model SitePageContent {
+  id            Int    @id @default(1)
+  heroImageUrl  String?
+  heroCaption   String?
+  heroAltText   String?
+  galleryPhotos Json   @default("[]")
+
+  updatedBy   Member?  @relation("SitePageContentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteAction {
+  id        Int     @id @default(autoincrement())
+  key       String  @unique
+  label     String?
+  url       String?
+  isVisible Boolean @default(false)
+
+  updatedBy   Member?  @relation("SiteActionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
