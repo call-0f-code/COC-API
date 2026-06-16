@@ -10,13 +10,13 @@ import progressRouter from './progress'
 import membersRouter from './members'
 import siteContentRouter from './site-content'
 
-export default function routes(upload: Multer, supabase: SupabaseClient) {
+export default function routes(upload: Multer) {
   const router = Router();
-  router.use('/members', membersRouter(upload, supabase))
+  router.use('/members', membersRouter(upload))
 
-  router.use('/projects', projectsRouter(upload, supabase))
+  router.use('/projects', projectsRouter(upload))
 
-  router.use('/achievements' ,acheivementsRouter(upload, supabase));
+  router.use('/achievements' ,acheivementsRouter(upload));
   
   router.use('/interviews', interviewRouter());
  

@@ -39,7 +39,7 @@ app.use("/health",(req,res)=>{
   res.status(200).json({ message: "OK" });
 })
 
-app.use("/api/v1", routes(upload, supabase));
+app.use("/api/v1", routes(upload));
 
 // Serve API documentation
 app.use("/docs", express.static(path.join(__dirname, "..", "doc")));

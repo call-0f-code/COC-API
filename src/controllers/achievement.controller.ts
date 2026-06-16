@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import * as achievementService from "../services/achievement.service";
 import { uploadImage, deleteImage } from "../utils/imageUtils";
-import { supabase } from "../app";
 import { ApiError } from "../utils/apiError";
+import { supabase } from "../utils/supabaseClient";
 
 export const getAchievements = async (req: Request, res: Response) => {
   const achievements = await achievementService.getAchievements();

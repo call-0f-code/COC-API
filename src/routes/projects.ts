@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response, Router } from 'express'
 import { Multer } from 'multer'
-import { SupabaseClient } from '@supabase/supabase-js'
 import {
   addMembers,
   createProject,
@@ -26,8 +25,7 @@ function parseProjectData(req: Request, res: Response, next: NextFunction) {
 }
 
 export default function projectsRouter(
-  upload: Multer,
-  supabase: SupabaseClient,
+  upload: Multer, 
 ) {
   const router = Router();
 
