@@ -8,6 +8,7 @@ import topicRouter from './topics'
 import quetionsRouter from './questions'
 import progressRouter from './progress'
 import membersRouter from './members'
+import siteContentRouter from './site-content'
 
 export default function routes(upload: Multer, supabase: SupabaseClient) {
   const router = Router();
@@ -24,6 +25,8 @@ export default function routes(upload: Multer, supabase: SupabaseClient) {
   router.use("/questions", quetionsRouter());
 
   router.use("/progress", progressRouter());
+
+  router.use("/site-content", siteContentRouter(upload));
 
   return router;
 }
