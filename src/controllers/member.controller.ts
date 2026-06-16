@@ -3,6 +3,7 @@ import * as memberService from "../services/member.service";
 import { ApiError } from "../utils/apiError";
 import { uploadImage } from "../utils/imageUtils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { Role } from "../generated/prisma/client";
 
 // List all approved members
 export const listAllApprovedMembers = async (req: Request, res: Response) => {
@@ -114,8 +115,6 @@ export const updateRequest = async (req: Request, res: Response) => {
     throw new ApiError("No essential creds provided", 400);
   }
 
-  if(!isApproved) throw new ApiError("Someone interrupting the backend flow", 400);
-
   const update = await memberService.approveRequest(
     isApproved,
     adminId,
@@ -155,4 +154,30 @@ export const getUserInterviews = async (req: Request, res: Response) => {
 
   const interviews = await memberService.getInterviews(memberId);
   res.status(200).json({ success: true, interviews });
+};
+
+// Update a member's role (SUPER_ADMIN only)
+export const updateMemberRole = async (req: Request, res: Response) => {
+  const { memberId } = req.params;
+  const { adminId, role } = req.body;
+
+  if (!memberId || !adminId || !role) {
+    throw new ApiError("memberId, adminId, and role are required", 400);
+  }
+
+  const validRoles = Object.values(Role);
+  if (!validRoles.includes(role)) {
+    throw new ApiError(
+      `Invalid role. Must be one of: ${validRoles.join(", ")}`,
+      400,
+    );
+  }
+
+  const updated = await memberService.updateMemberRole(adminId, memberId, role as Role);
+
+  res.status(200).json({
+    success: true,
+    user: updated,
+    message: `Role updated to ${role}`,
+  });
 };
