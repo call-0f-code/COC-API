@@ -195,5 +195,28 @@ export default function membersRouter(
    */
   router.get("/:memberId/interviews", memberCtrl.getUserInterviews);
 
+  /**
+   * @api {patch} /members/:memberId/role Update a member's role
+   * @apiName UpdateMemberRole
+   * @apiGroup Member
+   *
+   * @apiParam (URL Params) {String} memberId Target member's ID.
+   * @apiBody {String} adminId ID of the Super Admin performing the change.
+   * @apiBody {String="SUPER_ADMIN","ADMIN","FOUNDER","MEMBER"} role New role to assign.
+   *
+   * @apiSuccess {Boolean} success Request status.
+   * @apiSuccess {Object}  user Updated member object.
+   * @apiSuccess {String}  message Confirmation message.
+   *
+   * @apiError (Error 400) BadRequest Missing required fields or invalid role.
+   * @apiError (Error 403) Forbidden Only Super Admins can assign roles.
+   *
+   * @apiExample {curl} Example usage:
+   *   curl -X PATCH http://localhost:3000/members/123/role \
+   *   -H "Content-Type: application/json" \
+   *   -d '{"adminId": "superadmin-id", "role": "ADMIN"}'
+   */
+  router.patch("/:memberId/role", memberCtrl.updateMemberRole);
+
   return router;
 }

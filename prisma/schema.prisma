@@ -27,7 +27,7 @@ model Member {
   codeforces    String?
   passoutYear   DateTime?
   isApproved    Boolean  @default(false)
-  isManager     Boolean  @default(false)
+  role          Role     @default(MEMBER)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -169,6 +169,13 @@ enum Difficulty {
   Easy
   Medium
   Hard
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  FOUNDER
+  MEMBER
 }
 
 model InterviewExperience {

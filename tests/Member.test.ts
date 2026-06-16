@@ -4,8 +4,11 @@ import * as memberService from '../src/services/member.service';
 import { ApiError } from '../src/utils/apiError';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { uploadImage } from '../src/utils/imageUtils';
+import { Role } from '../src/db/client';
+
 
 jest.mock('../src/db/client', () => ({
+  ...jest.requireActual('../src/db/client'),
   prisma: {
     member: {
       findUnique: jest.fn(),
@@ -83,6 +86,7 @@ describe('Member Controller - updateAMember', () => {
 
     const res = mockResponse();
 
+    const role = Role.MEMBER
     const updatedMember = {
       id: '123',
       name: 'Test User',
@@ -100,7 +104,7 @@ describe('Member Controller - updateAMember', () => {
       gfg: null,
       geeksforgeeks: null,
       passoutYear: new Date('2025-05-31'),
-      isManager: false,
+      role: role,
       isApproved: false,
       approvedById: null,
       createdAt: new Date(),
@@ -131,6 +135,7 @@ describe('Member Controller - updateAMember', () => {
 
     const res = mockResponse();
 
+    const role = Role.MEMBER
     const oldMember = {
       id: '123',
       name: 'Old User',
@@ -148,7 +153,7 @@ describe('Member Controller - updateAMember', () => {
       gfg: null,
       geeksforgeeks: null,
       passoutYear: new Date('2025-05-31'),
-      isManager: false,
+      role: role,
       isApproved: false,
       approvedById: null,
       createdAt: new Date(),
@@ -200,6 +205,7 @@ describe('Member Controller - updateAMember', () => {
 
     const res = mockResponse();
 
+    const role:Role = Role.MEMBER
     const updatedMember = {
       id: '123',
       name: 'Updated User',
@@ -217,7 +223,7 @@ describe('Member Controller - updateAMember', () => {
       gfg: null,
       geeksforgeeks: null,
       passoutYear: new Date('2025-05-31'),
-      isManager: false,
+      role: role,
       isApproved: false,
       approvedById: null,
       createdAt: new Date(),
