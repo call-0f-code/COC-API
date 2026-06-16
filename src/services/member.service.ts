@@ -1,5 +1,6 @@
 import prisma  from "../db/client";
 import { ApiError } from "../utils/apiError";
+import { Role } from "../generated/prisma/client";
 
 export const getUserByEmail = async(email: string) => {
   return await prisma.member.findUnique({
@@ -9,7 +10,7 @@ export const getUserByEmail = async(email: string) => {
     select: {
       id: true,
       isApproved: true,
-      isManager: true,
+      role: true,
       accounts: {
         select: {
           password: true
@@ -142,5 +143,31 @@ export const getProjects = async (id: string) => {
 export const getInterviews = async (id: string) => {
   return await prisma.interviewExperience.findMany({
     where: { memberId: id },
+  });
+};
+
+export const updateMemberRole = async (
+  superAdminId: string,
+  memberId: string,
+  newRole: Role,
+) => {
+  // Verify the requester is a SUPER_ADMIN
+  const requester = await prisma.member.findUnique({
+    where: { id: superAdminId },
+    select: { role: true },
+  });
+
+  if (!requester || requester.role !== Role.SUPER_ADMIN) {
+    throw new ApiError("Forbidden: only Super Admins can assign roles", 403);
+  }
+
+  // Prevent modifying own role
+  if (superAdminId === memberId) {
+    throw new ApiError("Cannot modify your own role", 400);
+  }
+
+  return await prisma.member.update({
+    where: { id: memberId },
+    data: { role: newRole },
   });
 };

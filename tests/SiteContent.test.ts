@@ -266,7 +266,7 @@ describe("site-content service guards", () => {
     const prisma = (await import("../src/db/client")).default;
 
     (prisma.member.findUnique as jest.Mock).mockResolvedValue({
-      isManager: false,
+      role: 'MEMBER',
     });
 
     await expect(
@@ -274,14 +274,14 @@ describe("site-content service guards", () => {
         isVisible: true,
         url: "https://example.com",
       }),
-    ).rejects.toThrow(new ApiError("Forbidden: manager access required", 403));
+    ).rejects.toThrow(new ApiError("Forbidden: admin access required", 403));
   });
 
   it("should reject visible action without URL", async () => {
     const prisma = (await import("../src/db/client")).default;
 
     (prisma.member.findUnique as jest.Mock).mockResolvedValue({
-      isManager: true,
+      role: 'ADMIN',
     });
     (prisma.siteAction.findUnique as jest.Mock).mockResolvedValue({
       key: "recruitment",

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../db/client";
 import { ApiError } from "../utils/apiError";
-import { Prisma } from "../generated/prisma/client";
+import { Prisma, Role } from "../generated/prisma/client";
 
 const PAGE_CONTENT_ID = 1;
 
@@ -9,14 +9,16 @@ function toGalleryJson(gallery: GalleryPhoto[]): Prisma.InputJsonValue {
   return gallery as unknown as Prisma.InputJsonValue;
 }
 
-async function assertManager(adminId: string) {
+const ADMIN_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN];
+
+async function assertAdmin(adminId: string) {
   const member = await prisma.member.findUnique({
     where: { id: adminId },
-    select: { isManager: true },
+    select: { role: true },
   });
 
-  if (!member?.isManager) {
-    throw new ApiError("Forbidden: manager access required", 403);
+  if (!member || !ADMIN_ROLES.includes(member.role)) {
+    throw new ApiError("Forbidden: admin access required", 403);
   }
 }
 
@@ -92,7 +94,7 @@ export async function updateSitePageContent(
   adminId: string,
   data: Omit<UpdateSitePageContentInput, "updatedById">,
 ) {
-  await assertManager(adminId);
+  await assertAdmin(adminId);
 
   const page = await prisma.sitePageContent.update({
     where: { id: PAGE_CONTENT_ID },
@@ -113,7 +115,7 @@ export async function updateSiteAction(
   key: string,
   data: Omit<UpdateSiteActionInput, "updatedById">,
 ) {
-  await assertManager(adminId);
+  await assertAdmin(adminId);
 
   const current = await prisma.siteAction.findUnique({ where: { key } });
   if (!current) {
@@ -144,7 +146,7 @@ export async function addGalleryPhoto(
   adminId: string,
   data: Omit<CreateGalleryPhotoInput, "createdById">,
 ) {
-  await assertManager(adminId);
+  await assertAdmin(adminId);
 
   const current = await getPageContent();
   const gallery = parseGalleryPhotos(current.galleryPhotos);
@@ -177,7 +179,7 @@ export async function updateGalleryPhoto(
   photoId: string,
   data: Omit<UpdateGalleryPhotoInput, "updatedById">,
 ) {
-  await assertManager(adminId);
+  await assertAdmin(adminId);
 
   const current = await getPageContent();
   const gallery = parseGalleryPhotos(current.galleryPhotos);
@@ -218,7 +220,7 @@ export async function updateGalleryPhoto(
 }
 
 export async function deleteGalleryPhoto(adminId: string, photoId: string) {
-  await assertManager(adminId);
+  await assertAdmin(adminId);
 
   const current = await getPageContent();
   const gallery = parseGalleryPhotos(current.galleryPhotos);
@@ -240,7 +242,7 @@ export async function deleteGalleryPhoto(adminId: string, photoId: string) {
 }
 
 export async function getGalleryPhoto(adminId: string, photoId: string) {
-  await assertManager(adminId);
+  await assertAdmin(adminId);
 
   const current = await getPageContent();
   const gallery = parseGalleryPhotos(current.galleryPhotos);
