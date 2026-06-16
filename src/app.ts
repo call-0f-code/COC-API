@@ -7,7 +7,6 @@ import { errorHandler } from "./utils/apiError";
 import path from "path";
 import { logger } from "./utils/logger";
 import morgan from "morgan";
-import { supabase } from "./utils/supabaseClient";
 import config from "./config";
 
 const app = express();
