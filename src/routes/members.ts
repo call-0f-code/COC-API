@@ -1,11 +1,11 @@
 import express from "express";
 import * as memberCtrl from "../controllers/member.controller";
 import { Multer } from "multer";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "../utils/supabaseClient";
+
 
 export default function membersRouter(
   upload: Multer,
-  supabase: SupabaseClient,
 ) {
   const router = express.Router();
 

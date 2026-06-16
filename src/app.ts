@@ -4,16 +4,11 @@ import multer from "multer";
 import { json, urlencoded } from "body-parser";
 import routes from "./routes";
 import { errorHandler } from "./utils/apiError";
-import { createClient } from "@supabase/supabase-js";
-import config from "./config";
 import path from "path";
 import { logger } from "./utils/logger";
 import morgan from "morgan";
-// Initialize Supabase client for storage operations
-export const supabase = createClient(
-  config.SUPABASE_URL,
-  config.SUPABASE_SERVICE_ROLE_KEY,
-);
+import { supabase } from "./utils/supabaseClient";
+import config from "./config";
 
 const app = express();
 class LoggerStream {
@@ -44,7 +39,10 @@ app.use("/health",(req,res)=>{
   res.status(200).json({ message: "OK" });
 })
 
-app.use("/api/v1", routes(upload, supabase));
+app.use("/api/v1", routes(upload));
+
+// Serve API documentation
+app.use("/docs", express.static(path.join(__dirname, "..", "doc")));
 
 // 404 handler
 app.use((req, res) => {
@@ -55,6 +53,4 @@ app.use((req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-// Serve API documentation
-app.use("/docs", express.static(path.join(__dirname, "..", "docs/apidoc")));
 export default app;

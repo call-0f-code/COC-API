@@ -1,7 +1,6 @@
 import express from 'express';
 import * as acheivementsCtrl from '../controllers/achievement.controller';
 import { Multer } from 'multer';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 import { Request, Response,NextFunction } from 'express';
 
@@ -18,7 +17,7 @@ export function parseCreateAchievementData(req: Request, res: Response, next: Ne
 
 
 
-export default function acheivementsRouter(upload: Multer, supabase: SupabaseClient) {
+export default function acheivementsRouter(upload: Multer) {
     const router = express.Router();
     
 

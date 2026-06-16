@@ -2,7 +2,7 @@ import * as projectService from "../services/project.service";
 import { Request, Response } from "express";
 import { ApiError } from "../utils/apiError";
 import { deleteImage, uploadImage } from "../utils/imageUtils";
-import { supabase } from "../app";
+import { supabase } from "../utils/supabaseClient";
 
 
 export const getProjects = async (req: Request, res: Response) => {
