@@ -54,6 +54,8 @@ model Member {
   updatedProjects     Project[]     @relation("ProjectUpdatedBy")
   updatedSitePageContent SitePageContent[] @relation("SitePageContentUpdatedBy")
   updatedSiteActions     SiteAction[]     @relation("SiteActionUpdatedBy")
+  createdEmailTemplates EmailTemplate[] @relation("EmailTemplateCreatedBy")
+  updatedEmailTemplates EmailTemplate[] @relation("EmailTemplateUpdatedBy")
 }
 
 model Account {
@@ -219,3 +221,18 @@ model SiteAction {
   updatedAt   DateTime @updatedAt
 }
 
+
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  subject   String
+  htmlBody  String
+  textBody  String?
+
+  createdBy   Member?  @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedBy   Member?  @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}

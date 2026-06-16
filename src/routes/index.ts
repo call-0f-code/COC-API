@@ -9,6 +9,7 @@ import quetionsRouter from './questions'
 import progressRouter from './progress'
 import membersRouter from './members'
 import siteContentRouter from './site-content'
+import emailRouter from './email'
 
 export default function routes(upload: Multer) {
   const router = Router();
@@ -27,6 +28,7 @@ export default function routes(upload: Multer) {
   router.use("/progress", progressRouter());
 
   router.use("/site-content", siteContentRouter(upload));
+  router.use("/email", emailRouter());
 
   return router;
 }
