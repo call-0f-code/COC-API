@@ -183,7 +183,7 @@ export const updateGalleryPhoto = async (req: Request, res: Response) => {
     );
   }
 
-  const { content, previousImageUrl } =
+  const { content} =
     await siteContentService.updateGalleryPhoto(adminId, photoId, {
       imageUrl,
       caption: photoData.caption as string | null | undefined,
@@ -191,9 +191,6 @@ export const updateGalleryPhoto = async (req: Request, res: Response) => {
       sortOrder: photoData.sortOrder as number | undefined,
     });
 
-  if (previousImageUrl) {
-    await deleteImage(supabase, previousImageUrl);
-  }
 
   res.status(200).json({
     success: true,
