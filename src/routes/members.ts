@@ -17,7 +17,7 @@ export default function membersRouter(
    * @apiSuccess {Object[]} unapprovedMembers List of unapproved members.
    *
    * @apiExample {curl} Example usage:
-   *   curl -X GET http://localhost:3000/members/unapproved
+   *   curl -X GET http://localhost:3000/api/v1/members/unapproved
    */
   router.get("/unapproved", memberCtrl.getUnapprovedMembers);
 
@@ -33,7 +33,7 @@ export default function membersRouter(
    * @apiSuccess {Object[]} members List of ghosted member objects (includes ghostedBy admin info).
    *
    * @apiExample {curl} Example usage:
-   *   curl -X GET http://localhost:3000/members/dead-zone
+   *   curl -X GET http://localhost:3000/api/v1/members/dead-zone
    */
   router.get("/dead-zone", memberCtrl.getDeadZoneMembers);
   
@@ -48,7 +48,7 @@ export default function membersRouter(
    * @apiError (Error 400) BadRequest No memberId provided.
    *
    * @apiExample {curl} Example usage:
-   *   curl -X GET http://localhost:3000/members/123
+   *   curl -X GET http://localhost:3000/api/v1/members/123
    */
   router.get("/:memberId", memberCtrl.getUserDetails);
 
@@ -70,10 +70,10 @@ export default function membersRouter(
    * @apiError (400) IncorrectEmail The provided email does not match any user.
    *
    * @apiExample {curl} Example usage (list all):
-   *   curl -X GET http://localhost:3000/members
+   *   curl -X GET http://localhost:3000/api/v1/members
    *
    * @apiExample {curl} Example usage (get by email):
-   *   curl -X GET "http://localhost:3000/members?email=john@example.com"
+   *   curl -X GET "http://localhost:3000/api/v1/members?email=john@example.com"
    */
   router.get("/", memberCtrl.listAllApprovedMembers);
 
@@ -102,7 +102,7 @@ export default function membersRouter(
    *   -F "password=securePass123" \
    *   -F "passoutYear=2026" \
    *   -F "provider=credentials" \
-   *   http://localhost:3000/members
+   *   http://localhost:3000/api/v1/members
    */
   router.post("/", upload.single("file"), memberCtrl.createAMember(supabase));
 
@@ -140,7 +140,7 @@ export default function membersRouter(
    * @apiExample {curl} Example usage:
    *   curl -X PATCH -F "file=@profile.jpg" \
    *   -F 'memberData={"name":"John Doe","email":"john@example.com"}' \
-   *   http://localhost:3000/members/123
+   *   http://localhost:3000/api/v1/members/123
    */
   router.patch(
     "/:memberId",
@@ -162,7 +162,7 @@ export default function membersRouter(
    * @apiError (Error 400) BadRequest Missing required fields.
    *
    * @apiExample {curl} Example usage:
-   *   curl -X PATCH http://localhost:3000/members/approve/123 \
+   *   curl -X PATCH http://localhost:3000/api/v1/members/approve/123 \
    *   -H "Content-Type: application/json" \
    *   -d '{"isApproved": true, "adminId": "admin123"}'
    */
@@ -190,12 +190,12 @@ export default function membersRouter(
    * @apiError (Error 403) Forbidden Only Admins and Super Admins can ghost members.
    *
    * @apiExample {curl} Ghost a member:
-   *   curl -X PATCH http://localhost:3000/members/ghost/123 \
+   *   curl -X PATCH http://localhost:3000/api/v1/members/ghost/123 \
    *   -H "Content-Type: application/json" \
    *   -d '{"adminId": "admin-id", "ghost": true}'
    *
    * @apiExample {curl} Unghost a member:
-   *   curl -X PATCH http://localhost:3000/members/ghost/123 \
+   *   curl -X PATCH http://localhost:3000/api/v1/members/ghost/123 \
    *   -H "Content-Type: application/json" \
    *   -d '{"adminId": "admin-id", "ghost": false}'
    */
@@ -212,7 +212,7 @@ export default function membersRouter(
   * @apiSuccess {Object[]} achievements List of achievements.
   *
   * @apiExample {curl} Example usage:
-  *   curl -X GET http://localhost:3000/members/123/achievements
+  *   curl -X GET http://localhost:3000/api/v1/members/123/achievements
   */
   router.get("/:memberId/achievements", memberCtrl.getUserAchievements);
 
@@ -226,7 +226,7 @@ export default function membersRouter(
    * @apiSuccess {Object[]} projects List of projects.
    *
    * @apiExample {curl} Example usage:
-   *   curl -X GET http://localhost:3000/members/123/projects
+   *   curl -X GET http://localhost:3000/api/v1/members/123/projects
    */
   router.get("/:memberId/projects", memberCtrl.getUserProjects);
 
@@ -240,7 +240,7 @@ export default function membersRouter(
    * @apiSuccess {Object[]} interviews List of interviews.
    *
    * @apiExample {curl} Example usage:
-   *   curl -X GET http://localhost:3000/members/123/interviews
+   *   curl -X GET http://localhost:3000/api/v1/members/123/interviews
    */
   router.get("/:memberId/interviews", memberCtrl.getUserInterviews);
 
@@ -261,7 +261,7 @@ export default function membersRouter(
    * @apiError (Error 403) Forbidden Only Super Admins can assign roles.
    *
    * @apiExample {curl} Example usage:
-   *   curl -X PATCH http://localhost:3000/members/123/role \
+   *   curl -X PATCH http://localhost:3000/api/v1/members/123/role \
    *   -H "Content-Type: application/json" \
    *   -d '{"adminId": "superadmin-id", "role": "ADMIN"}'
    */
