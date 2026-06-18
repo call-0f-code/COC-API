@@ -199,6 +199,14 @@ export const ghostMember = async (
     throw new ApiError("Cannot ghost yourself", 400);
   }
 
+  const target = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { id: true },
+  });
+  if (!target) {
+    throw new ApiError("Member not found", 404);
+  }
+
   return await prisma.member.update({
     where: { id: memberId },
     data: {
