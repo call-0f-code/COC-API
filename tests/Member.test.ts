@@ -325,7 +325,7 @@ describe('Member Controller - ghostMember', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       user: restored,
-      message: 'Member unghosted and moved to Dead Zone',
+      message: 'Member unghosted and restored from Dead Zone',
     });
   });
 
