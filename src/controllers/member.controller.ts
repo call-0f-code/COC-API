@@ -198,10 +198,11 @@ export const ghostMember = async (req: Request, res: Response) => {
   const updated = await memberService.ghostMember(adminId, memberId, ghost);
 
   const action = ghost ? "ghosted" : "unghosted";
+  const movement = ghost ? "moved to Dead Zone" : "restored from Dead Zone";
   res.status(200).json({
     success: true,
     user: updated,
-    message: `Member ${action} and moved to Dead Zone`,
+    message: `Member ${action} and ${movement}`,
   });
 };
 
