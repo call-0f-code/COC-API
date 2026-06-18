@@ -7,7 +7,7 @@ import { Response , Request} from 'express';
 import * as imageUtils from '../src/utils/imageUtils';
 
 
-jest.mock('../src/app', () => ({
+jest.mock('../src/utils/supabaseClient', () => ({
   supabase: {
     storage: {
       from: jest.fn(() => ({

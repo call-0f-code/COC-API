@@ -8,14 +8,16 @@ import topicRouter from './topics'
 import quetionsRouter from './questions'
 import progressRouter from './progress'
 import membersRouter from './members'
+import siteContentRouter from './site-content'
+import emailRouter from './email'
 
-export default function routes(upload: Multer, supabase: SupabaseClient) {
+export default function routes(upload: Multer) {
   const router = Router();
-  router.use('/members', membersRouter(upload, supabase))
+  router.use('/members', membersRouter(upload))
 
-  router.use('/projects', projectsRouter(upload, supabase))
+  router.use('/projects', projectsRouter(upload))
 
-  router.use('/achievements' ,acheivementsRouter(upload, supabase));
+  router.use('/achievements' ,acheivementsRouter(upload));
   
   router.use('/interviews', interviewRouter());
  
@@ -24,6 +26,9 @@ export default function routes(upload: Multer, supabase: SupabaseClient) {
   router.use("/questions", quetionsRouter());
 
   router.use("/progress", progressRouter());
+
+  router.use("/site-content", siteContentRouter(upload));
+  router.use("/email", emailRouter());
 
   return router;
 }

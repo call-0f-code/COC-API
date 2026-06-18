@@ -10,7 +10,7 @@ import * as achievementService from "../src/services/achievement.service";
 import { uploadImage, deleteImage } from "../src/utils/imageUtils";
 import { ApiError } from "../src/utils/apiError";
 
-jest.mock("../src/app", () => ({
+jest.mock("../src/utils/supabaseClient", () => ({
   supabase: {
     storage: {
       from: jest.fn(() => ({

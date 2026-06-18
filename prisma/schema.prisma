@@ -27,7 +27,8 @@ model Member {
   codeforces    String?
   passoutYear   DateTime?
   isApproved    Boolean  @default(false)
-  isManager     Boolean  @default(false)
+  isGhosted     Boolean  @default(false)
+  role          Role     @default(MEMBER)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -35,6 +36,11 @@ model Member {
   approvedBy      Member?  @relation("MemberApprovals", fields: [approvedById], references: [id])
   approvedById    String?
   approvedMembers Member[] @relation("MemberApprovals")
+
+  // Ghost / Dead Zone audit (self-reference)
+  ghostedBy      Member?  @relation("MemberGhosts", fields: [ghostedById], references: [id])
+  ghostedById    String?
+  ghostedMembers Member[] @relation("MemberGhosts")
 
   // Authentication & Relations
   accounts     Account[]
@@ -52,6 +58,10 @@ model Member {
   updatedAchievements Achievement[] @relation("AchievementUpdatedBy")
   createdProjects     Project[]     @relation("ProjectCreatedBy")
   updatedProjects     Project[]     @relation("ProjectUpdatedBy")
+  updatedSitePageContent SitePageContent[] @relation("SitePageContentUpdatedBy")
+  updatedSiteActions     SiteAction[]     @relation("SiteActionUpdatedBy")
+  createdEmailTemplates EmailTemplate[] @relation("EmailTemplateCreatedBy")
+  updatedEmailTemplates EmailTemplate[] @relation("EmailTemplateUpdatedBy")
 }
 
 model Account {
@@ -167,6 +177,13 @@ enum Difficulty {
   Hard
 }
 
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  FOUNDER
+  MEMBER
+}
+
 model InterviewExperience {
   id          Int     @id @default(autoincrement())
   company     String
@@ -191,4 +208,44 @@ model CompletedQuestion {
   questionId Int
 
   @@id([memberId, questionId])
+}
+
+model SitePageContent {
+  id            Int    @id @default(1)
+  heroImageUrl  String?
+  heroCaption   String?
+  heroAltText   String?
+  galleryPhotos Json   @default("[]")
+
+  updatedBy   Member?  @relation("SitePageContentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteAction {
+  id        Int     @id @default(autoincrement())
+  key       String  @unique
+  label     String?
+  url       String?
+  isVisible Boolean @default(false)
+
+  updatedBy   Member?  @relation("SiteActionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
+
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  subject   String
+  htmlBody  String
+  textBody  String?
+
+  createdBy   Member?  @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedBy   Member?  @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
 }

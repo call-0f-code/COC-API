@@ -16,7 +16,8 @@
     "precommit": "lint-staged",
     "migrate:first": "bunx prisma migrate dev --name init",
     "migrate": "bunx prisma migrate dev",
-    "generate": "bunx prisma generate"
+    "generate": "bunx prisma generate",
+    "local": "bash scripts/setup-local.sh"
   },
   "repository": {
     "type": "git",

@@ -1,5 +1,8 @@
 import prisma  from "../db/client";
 import { ApiError } from "../utils/apiError";
+import { Role } from "../generated/prisma/client";
+
+const GHOST_ALLOWED_ROLES: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
 
 export const getUserByEmail = async(email: string) => {
   return await prisma.member.findUnique({
@@ -9,7 +12,7 @@ export const getUserByEmail = async(email: string) => {
     select: {
       id: true,
       isApproved: true,
-      isManager: true,
+      role: true,
       accounts: {
         select: {
           password: true
@@ -23,6 +26,7 @@ export const approvedMembers = async () => {
   return await prisma.member.findMany({
     where: {
       isApproved: true,
+      isGhosted: false,
     },
   });
 };
@@ -97,7 +101,7 @@ export const updatePassword = async(id: string, password: string) => {
 
 export const unapprovedMembers = async () => {
   return await prisma.member.findMany({
-    where: { isApproved: false },
+    where: { isApproved: false, isGhosted: false },
   });
 };
 
@@ -142,5 +146,86 @@ export const getProjects = async (id: string) => {
 export const getInterviews = async (id: string) => {
   return await prisma.interviewExperience.findMany({
     where: { memberId: id },
+  });
+};
+
+export const updateMemberRole = async (
+  superAdminId: string,
+  memberId: string,
+  newRole: Role,
+) => {
+  // Verify the requester is a SUPER_ADMIN
+  const requester = await prisma.member.findUnique({
+    where: { id: superAdminId },
+    select: { role: true },
+  });
+
+  if (!requester || requester.role !== Role.SUPER_ADMIN) {
+    throw new ApiError("Forbidden: only Super Admins can assign roles", 403);
+  }
+
+  // Prevent modifying own role
+  if (superAdminId === memberId) {
+    throw new ApiError("Cannot modify your own role", 400);
+  }
+
+  return await prisma.member.update({
+    where: { id: memberId },
+    data: { role: newRole },
+  });
+};
+
+/**
+ * Ghost or unghost a member request (Dead Zone).
+ * Only ADMIN and SUPER_ADMIN are allowed to perform this action.
+ */
+export const ghostMember = async (
+  adminId: string,
+  memberId: string,
+  ghost: boolean,
+) => {
+  // Verify requester exists and has the right role
+  const requester = await prisma.member.findUnique({
+    where: { id: adminId },
+    select: { role: true },
+  });
+
+  if (!requester || !GHOST_ALLOWED_ROLES.includes(requester.role)) {
+    throw new ApiError("Forbidden: only Admins and Super Admins can ghost members", 403);
+  }
+
+  // Prevent self-ghosting
+  if (adminId === memberId) {
+    throw new ApiError("Cannot ghost yourself", 400);
+  }
+
+  const target = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { id: true },
+  });
+  if (!target) {
+    throw new ApiError("Member not found", 404);
+  }
+
+  return await prisma.member.update({
+    where: { id: memberId },
+    data: {
+      isGhosted: ghost,
+      ghostedBy: ghost ? { connect: { id: adminId } } : { disconnect: true },
+    },
+  });
+};
+
+/**
+ * Retrieve all members currently in the Dead Zone (ghosted).
+ */
+export const deadZoneMembers = async () => {
+  return await prisma.member.findMany({
+    where: { isGhosted: true },
+    include: {
+      ghostedBy: {
+        select: { id: true, name: true, email: true, role: true },
+      },
+    },
   });
 };
