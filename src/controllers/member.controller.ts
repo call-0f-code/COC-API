@@ -181,3 +181,33 @@ export const updateMemberRole = async (req: Request, res: Response) => {
     message: `Role updated to ${role}`,
   });
 };
+
+// Ghost or unghost a member (Dead Zone) — ADMIN & SUPER_ADMIN only
+export const ghostMember = async (req: Request, res: Response) => {
+  const { memberId } = req.params;
+  const { adminId, ghost = true } = req.body;
+
+  if (!memberId || !adminId) {
+    throw new ApiError("memberId and adminId are required", 400);
+  }
+
+  if (typeof ghost !== "boolean") {
+    throw new ApiError('"ghost" must be a boolean', 400);
+  }
+
+  const updated = await memberService.ghostMember(adminId, memberId, ghost);
+
+  const action = ghost ? "ghosted" : "unghosted";
+  const movement = ghost ? "moved to Dead Zone" : "restored from Dead Zone";
+  res.status(200).json({
+    success: true,
+    user: updated,
+    message: `Member ${action} and ${movement}`,
+  });
+};
+
+// Get all ghosted members (Dead Zone audit list) — ADMIN & SUPER_ADMIN only
+export const getDeadZoneMembers = async (req: Request, res: Response) => {
+  const members = await memberService.deadZoneMembers();
+  res.status(200).json({ success: true, members });
+};

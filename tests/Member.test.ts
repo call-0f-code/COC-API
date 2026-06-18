@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createAMember, updateAMember } from '../src/controllers/member.controller';
+import { createAMember, updateAMember, ghostMember, getDeadZoneMembers } from '../src/controllers/member.controller';
 import * as memberService from '../src/services/member.service';
 import { ApiError } from '../src/utils/apiError';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -109,6 +109,9 @@ describe('Member Controller - updateAMember', () => {
       approvedById: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      isGhosted: false,
+      ghostedById: null,
+      ghostedAt: null,
     };
 
     jest.spyOn(memberService, 'updateMember').mockResolvedValue(updatedMember);
@@ -158,6 +161,9 @@ describe('Member Controller - updateAMember', () => {
       approvedById: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      isGhosted: false,
+      ghostedById: null,
+      ghostedAt: null,
     };
 
     const updatedMember = {
@@ -228,6 +234,9 @@ describe('Member Controller - updateAMember', () => {
       approvedById: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      isGhosted: false,
+      ghostedById: null,
+      ghostedAt: null,
     };
 
     // Mock updatePassword and getDetails
@@ -246,3 +255,140 @@ describe('Member Controller - updateAMember', () => {
     });
   });
 });
+
+// Dead Zone (Ghost) feature
+const makeBaseMember = (overrides: Record<string, unknown> = {}) => ({
+  id: 'member-123',
+  name: 'Test User',
+  email: 'test@example.com',
+  birth_date: null,
+  phone: null,
+  bio: null,
+  profilePhoto: null,
+  github: null,
+  linkedin: null,
+  twitter: null,
+  leetcode: null,
+  codeforces: null,
+  codechef: null,
+  gfg: null,
+  geeksforgeeks: null,
+  passoutYear: new Date('2025-05-31'),
+  role: Role.MEMBER,
+  isApproved: false,
+  isGhosted: false,
+  approvedById: null,
+  ghostedById: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  ...overrides,
+});
+
+describe('Member Controller - ghostMember', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should ghost a member and return 200', async () => {
+    const req = {
+      params: { memberId: 'member-123' },
+      body: { adminId: 'admin-456', ghost: true },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    const ghosted = makeBaseMember({ isGhosted: true, ghostedById: 'admin-456' });
+    jest.spyOn(memberService, 'ghostMember').mockResolvedValue(ghosted);
+
+    await ghostMember(req, res);
+
+    expect(memberService.ghostMember).toHaveBeenCalledWith('admin-456', 'member-123', true);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      user: ghosted,
+      message: 'Member ghosted and moved to Dead Zone',
+    });
+  });
+
+  it('should unghost a member when ghost=false', async () => {
+    const req = {
+      params: { memberId: 'member-123' },
+      body: { adminId: 'admin-456', ghost: false },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    const restored = makeBaseMember({ isGhosted: false, ghostedById: null });
+    jest.spyOn(memberService, 'ghostMember').mockResolvedValue(restored);
+
+    await ghostMember(req, res);
+
+    expect(memberService.ghostMember).toHaveBeenCalledWith('admin-456', 'member-123', false);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      user: restored,
+      message: 'Member unghosted and restored from Dead Zone',
+    });
+  });
+
+  it('should throw 400 if memberId or adminId is missing', async () => {
+    const req = {
+      params: { memberId: 'member-123' },
+      body: {},
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await expect(ghostMember(req, res)).rejects.toThrow(
+      new ApiError('memberId and adminId are required', 400),
+    );
+  });
+
+  it('should throw 400 if ghost is not a boolean', async () => {
+    const req = {
+      params: { memberId: 'member-123' },
+      body: { adminId: 'admin-456', ghost: 'yes' },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await expect(ghostMember(req, res)).rejects.toThrow(
+      new ApiError('"ghost" must be a boolean', 400),
+    );
+  });
+
+  it('should propagate 403 when service rejects non-admin requester', async () => {
+    const req = {
+      params: { memberId: 'member-123' },
+      body: { adminId: 'non-admin-id', ghost: true },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    jest.spyOn(memberService, 'ghostMember').mockRejectedValue(
+      new ApiError('Forbidden: only Admins and Super Admins can ghost members', 403),
+    );
+
+    await expect(ghostMember(req, res)).rejects.toThrow(
+      new ApiError('Forbidden: only Admins and Super Admins can ghost members', 403),
+    );
+  });
+});
+
+describe('Member Controller - getDeadZoneMembers', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should return all ghosted members with 200', async () => {
+    const req = {} as Request;
+    const res = mockResponse();
+
+    const ghostedList = [
+      makeBaseMember({ isGhosted: true, ghostedById: 'admin-456' }),
+      makeBaseMember({ id: 'member-789', isGhosted: true, ghostedById: 'admin-456' }),
+    ];
+
+    jest.spyOn(memberService, 'deadZoneMembers').mockResolvedValue(ghostedList as any);
+
+    await getDeadZoneMembers(req, res);
+
+    expect(memberService.deadZoneMembers).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ success: true, members: ghostedList });
+  });
+});
+

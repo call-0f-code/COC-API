@@ -27,6 +27,7 @@ model Member {
   codeforces    String?
   passoutYear   DateTime?
   isApproved    Boolean  @default(false)
+  isGhosted     Boolean  @default(false)
   role          Role     @default(MEMBER)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -35,6 +36,11 @@ model Member {
   approvedBy      Member?  @relation("MemberApprovals", fields: [approvedById], references: [id])
   approvedById    String?
   approvedMembers Member[] @relation("MemberApprovals")
+
+  // Ghost / Dead Zone audit (self-reference)
+  ghostedBy      Member?  @relation("MemberGhosts", fields: [ghostedById], references: [id])
+  ghostedById    String?
+  ghostedMembers Member[] @relation("MemberGhosts")
 
   // Authentication & Relations
   accounts     Account[]

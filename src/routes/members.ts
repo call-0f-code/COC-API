@@ -20,6 +20,22 @@ export default function membersRouter(
    *   curl -X GET http://localhost:3000/members/unapproved
    */
   router.get("/unapproved", memberCtrl.getUnapprovedMembers);
+
+  /**
+   * @api {get} /members/dead-zone List all ghosted members (Dead Zone)
+   * @apiName GetDeadZoneMembers
+   * @apiGroup Member
+   *
+   * @apiDescription Returns all member records that have been ghosted by an admin.
+   * These members are hidden from the public approved list and the pending
+   * approval queue. Data is preserved for audit purposes.
+   *
+   * @apiSuccess {Object[]} members List of ghosted member objects (includes ghostedBy admin info).
+   *
+   * @apiExample {curl} Example usage:
+   *   curl -X GET http://localhost:3000/members/dead-zone
+   */
+  router.get("/dead-zone", memberCtrl.getDeadZoneMembers);
   
   /**
    * @api {get} /members/:memberId Get a member's details
@@ -151,6 +167,39 @@ export default function membersRouter(
    *   -d '{"isApproved": true, "adminId": "admin123"}'
    */
   router.patch("/approve/:memberId", memberCtrl.updateRequest);
+
+  /**
+   * @api {patch} /members/ghost/:memberId Ghost or unghost a member (Dead Zone)
+   * @apiName GhostMember
+   * @apiGroup Member
+   *
+   * @apiDescription Moves a member into the Dead Zone by setting isGhosted=true.
+   * Ghosted members are silently removed from the pending approval queue and
+   * the public member listing without hard-deleting their data.
+   * Setting ghost=false restores the member back to the active queue.
+   *
+   * @apiParam (URL Params) {String} memberId Target member's ID.
+   * @apiBody {String} adminId ID of the Admin or Super Admin performing the action.
+   * @apiBody {Boolean} [ghost=true] true to ghost, false to unghost.
+   *
+   * @apiSuccess {Boolean} success Request status.
+   * @apiSuccess {Object}  user Updated member object.
+   * @apiSuccess {String}  message Confirmation message.
+   *
+   * @apiError (Error 400) BadRequest Missing required fields or invalid ghost value.
+   * @apiError (Error 403) Forbidden Only Admins and Super Admins can ghost members.
+   *
+   * @apiExample {curl} Ghost a member:
+   *   curl -X PATCH http://localhost:3000/members/ghost/123 \
+   *   -H "Content-Type: application/json" \
+   *   -d '{"adminId": "admin-id", "ghost": true}'
+   *
+   * @apiExample {curl} Unghost a member:
+   *   curl -X PATCH http://localhost:3000/members/ghost/123 \
+   *   -H "Content-Type: application/json" \
+   *   -d '{"adminId": "admin-id", "ghost": false}'
+   */
+  router.patch("/ghost/:memberId", memberCtrl.ghostMember);
 
   
 /**
