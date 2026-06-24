@@ -114,6 +114,8 @@ services:
       - "${COC_ADMIN_FRONTEND_PORT:-5174}:5173"  # remapped to 5174 to avoid conflict
     env_file:
       - coc-admin/.env.local.frontend
+    environment:
+      - VITE_API_URL=http://localhost:8001
     depends_on:
       coc-admin-server:
         condition: service_healthy
@@ -158,6 +160,8 @@ services:
       - "${COC_MEMBER_FRONTEND_PORT:-5175}:5173"  # remapped to 5175 to avoid conflict
     env_file:
       - coc-member/.env.local.frontend
+    environment:
+      - VITE_API_URL=http://localhost:8002
     depends_on:
       coc-member-server:
         condition: service_healthy
