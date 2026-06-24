@@ -69,7 +69,8 @@ COC-API/
 │   ├── SiteContent.test.ts
 │   └── imageUtils.test.ts
 │
-├── docker/                  # Platform-specific Docker Compose stacks
+├── docker/                  # Docker Compose stacks
+│   ├── docker-compose.yml   # ★ Master stack — all platforms together
 │   ├── coc-member/          # Full COC Member platform stack
 │   │   ├── docker-compose.yml
 │   │   ├── .env.local.backend.example
@@ -145,9 +146,12 @@ bun install
 
 ### 4. Local development (Docker)
 
-The project ships **four Docker Compose stacks**. Choose the one you need:
+The project ships **five Docker Compose stacks**. Choose the one you need:
 
 ```bash
+# ★ All platforms at once (recommended for full-stack development)
+docker compose -f docker/docker-compose.yml up --watch
+
 # API only (for coc-api development)
 docker compose up --build
 

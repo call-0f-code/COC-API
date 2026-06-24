@@ -1,0 +1,173 @@
+# =============================================================================
+# Master Docker Compose — All Platforms
+# Runs coc-api + all three frontends/backends together on a single network.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml up --watch
+#
+# Port map:
+#   3000  → coc-api            (shared API)
+#   3001  → callofcode.in      (frontend)
+#   8001  → coc-admin backend
+#   5174  → coc-admin frontend
+#   8002  → coc-member backend
+#   5175  → coc-member frontend
+# =============================================================================
+
+name: coc-all
+
+services:
+
+  coc-api:
+    image: coc-api
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: builder        # builder stage has devDeps + bun --watch
+    restart: unless-stopped
+    ports:
+      - "${COC_API_PORT:-3000}:3000"
+    env_file:
+      - ../.env.local        # Local dev env vars (Supabase connection strings, etc.)
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../:/app
+      - /app/node_modules
+      - /app/node_modules/.prisma
+    command: >
+      sh -c "bunx prisma generate &&
+             bunx prisma migrate deploy &&
+             bun --watch src/server.ts"
+    develop:
+      watch:
+        - path: ../src
+          action: sync
+          target: /app/src
+        - path: ../package.json
+          action: rebuild
+        - path: ../bun.lock
+          action: rebuild
+        - path: ../prisma
+          action: rebuild
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - coc-network
+
+  # callofcode.in — main website frontend
+
+  callofcode-frontend:
+    image: callofcode07/callofcode:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "${CALLOFCODE_PORT:-3001}:3001"
+    env_file:
+      - callofcode.in/.env.local.frontend
+    environment:
+      - NODE_ENV=development
+      - API_BASE_URL=http://coc-api:3000
+    depends_on:
+      coc-api:
+        condition: service_healthy
+    networks:
+      - coc-network
+    command: ["npm", "run", "dev"]
+
+  # coc-admin — admin backend
+
+  coc-admin-server:
+    image: callofcode07/coc-admin-backend:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "${COC_ADMIN_BACKEND_PORT:-8001}:8000"   # remapped to 8001 to avoid conflict
+    env_file:
+      - coc-admin/.env.local.backend
+    environment:
+      - PORT=8000
+      - API_URL=http://coc-api:3000
+      - ALLOWED_ORIGINS=http://localhost:${COC_ADMIN_FRONTEND_PORT:-5174}
+    depends_on:
+      coc-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - coc-network
+
+  # coc-admin — admin frontend
+  coc-admin-web:
+    image: callofcode07/coc-admin-frontend:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "${COC_ADMIN_FRONTEND_PORT:-5174}:5173"  # remapped to 5174 to avoid conflict
+    env_file:
+      - coc-admin/.env.local.frontend
+    environment:
+      - VITE_API_URL=http://localhost:8001
+    depends_on:
+      coc-admin-server:
+        condition: service_healthy
+    networks:
+      - coc-network
+
+  # ---------------------------------------------------------------------------
+  # coc-member — member backend
+  # ---------------------------------------------------------------------------
+  coc-member-server:
+    image: callofcode07/coc-member-backend:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "${COC_MEMBER_BACKEND_PORT:-8002}:8000"  # remapped to 8002 to avoid conflict
+    env_file:
+      - coc-member/.env.local.backend
+    environment:
+      - PORT=8000
+      - API_URL=http://coc-api:3000
+      - ALLOWED_ORIGINS=http://localhost:${COC_MEMBER_FRONTEND_PORT:-5175}
+    depends_on:
+      coc-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - coc-network
+
+  # ---------------------------------------------------------------------------
+  # coc-member — member frontend
+  # ---------------------------------------------------------------------------
+  coc-member-web:
+    image: callofcode07/coc-member-frontend:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "${COC_MEMBER_FRONTEND_PORT:-5175}:5173"  # remapped to 5175 to avoid conflict
+    env_file:
+      - coc-member/.env.local.frontend
+    environment:
+      - VITE_API_URL=http://localhost:8002
+    depends_on:
+      coc-member-server:
+        condition: service_healthy
+    networks:
+      - coc-network
+
+networks:
+  coc-network:
+    driver: bridge
