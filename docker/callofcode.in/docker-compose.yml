@@ -1,41 +1,29 @@
-name: coc-api
+name: coc-callofcode
 
 services:
-  api:
+
+  coc-api:
+    image: coc-api
     build:
-      context: .
+      context: ../..
       dockerfile: Dockerfile
       target: builder        # Use builder stage in dev (has devDeps + bun watch)
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:3000"
     env_file:
-      - .env.local            # Local dev env vars (Supabase connection strings, etc.)
+      - ../../.env.local      # Local dev env vars (Supabase connection strings, etc.)
     environment:
       NODE_ENV: development
     volumes:
       # Mount source for live-reload (everything except node_modules)
-      - .:/app
+      - ../../:/app
       - /app/node_modules
       - /app/node_modules/.prisma
     command: >
       sh -c "bunx prisma generate &&
              bunx prisma migrate deploy &&
              bun --watch src/server.ts"
-    develop:
-      watch:
-        # Sync source changes into container instantly
-        - path: ./src
-          action: sync
-          target: /app/src
-        # Rebuild if package.json or lock file changes
-        - path: ./package.json
-          action: rebuild
-        - path: ./bun.lock
-          action: rebuild
-        # Rebuild if Prisma schema changes (needs prisma generate)
-        - path: ./prisma
-          action: rebuild
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -43,8 +31,26 @@ services:
       retries: 3
       start_period: 15s
     networks:
-      - coc-network
+      - coc-local
+
+  frontend:
+    image: callofcode07/callofcode:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.local.frontend
+    environment:
+      - NODE_ENV=development
+      - API_BASE_URL=http://coc-api:3000
+    depends_on:
+      coc-api:
+        condition: service_healthy
+    networks:
+      - coc-local
+    command: ["npm", "run", "dev"]
 
 networks:
-  coc-network:
+  coc-local:
     driver: bridge
