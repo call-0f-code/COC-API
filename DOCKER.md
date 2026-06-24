@@ -6,11 +6,12 @@ This guide covers everything you need to run any part of the Call of Code platfo
 
 ## Overview
 
-The repository ships with **four Docker Compose configurations**:
+The repository ships with **five Docker Compose configurations**:
 
 | File | Purpose | Services |
 |------|---------|----------|
 | `docker-compose.yml` | **API-only** dev (standalone) | `coc-api` |
+| `docker/docker-compose.yml` | **All platforms** master stack | all 6 services |
 | `docker/coc-member/docker-compose.yml` | Full **COC Member** stack | `coc-api` + `server` + `web` |
 | `docker/coc-admin/docker-compose.yml` | Full **COC Admin** stack | `coc-api` + `server` + `web` |
 | `docker/callofcode.in/docker-compose.yml` | Full **callofcode.in** website stack | `coc-api` + `frontend` |
@@ -75,6 +76,35 @@ cp docker/callofcode.in/.env.local.frontend.example docker/callofcode.in/.env.lo
 ---
 
 ## Running the Stacks
+
+### All platforms together (master stack)
+
+Use this when you need all three platforms running simultaneously (e.g. testing cross-platform API behaviour or running the full suite locally):
+
+```bash
+# From the repo root — watch mode recommended
+docker compose -f docker/docker-compose.yml up --watch
+
+# Or standard mode
+docker compose -f docker/docker-compose.yml up --build
+```
+
+All six services share a single `coc-network` bridge and a single `coc-api` instance:
+
+| Service | Container | Host port | Override env var |
+|---------|-----------|-----------|------------------|
+| `coc-api` | `3000` | **3000** | `COC_API_PORT` |
+| `callofcode-frontend` | `3001` | **3001** | `CALLOFCODE_PORT` |
+| `coc-admin-server` | `8000` | **8001** | `COC_ADMIN_BACKEND_PORT` |
+| `coc-admin-web` | `5173` | **5174** | `COC_ADMIN_FRONTEND_PORT` |
+| `coc-member-server` | `8000` | **8002** | `COC_MEMBER_BACKEND_PORT` |
+| `coc-member-web` | `5173` | **5175** | `COC_MEMBER_FRONTEND_PORT` |
+
+> **Port remapping**: because `coc-admin` and `coc-member` both internally bind `8000` and `5173`, the master stack remaps them to unique host ports to avoid conflicts. Internal service-to-service communication (`API_URL=http://coc-api:3000`) still uses the original container ports.
+
+> **Env files required**: make sure all six env files exist before starting (see [Environment Setup](#environment-setup) above).
+
+---
 
 ### API-only (standalone development)
 
@@ -217,9 +247,13 @@ The dev compose files use `target: builder` so that devDependencies and the Pris
 The `dockerfile:` path in compose is relative to the `context`, not the compose file. Our configs set `context: ../..` (repo root) so `dockerfile: Dockerfile` resolves correctly.
 
 **Port already in use**
-Set a custom port via the `PORT` env variable before running:
+For the individual stacks, set a custom port via the `PORT` env variable:
 ```bash
 PORT=3001 docker compose up
+```
+For the master stack, override the specific service port:
+```bash
+COC_API_PORT=3010 COC_ADMIN_BACKEND_PORT=8010 docker compose -f docker/docker-compose.yml up
 ```
 
 **Prisma migration errors on startup**

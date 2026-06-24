@@ -92,6 +92,7 @@ services:
     environment:
       - PORT=8000
       - API_URL=http://coc-api:3000
+      - ALLOWED_ORIGINS=http://localhost:${COC_ADMIN_FRONTEND_PORT:-5174}
     depends_on:
       coc-api:
         condition: service_healthy
@@ -133,6 +134,7 @@ services:
     environment:
       - PORT=8000
       - API_URL=http://coc-api:3000
+      - ALLOWED_ORIGINS=http://localhost:${COC_MEMBER_FRONTEND_PORT:-5175}
     depends_on:
       coc-api:
         condition: service_healthy
