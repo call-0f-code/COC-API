@@ -395,7 +395,7 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
 
     // 10b: Invalid secret (different length from the real one)
     const reqInvalid = {
-      headers: { "x-service-secret": "wrong" },
+      headers: { "x-internal-secret": "wrong" },
     } as unknown as Request;
     expect(() => requireInternalAuth(reqInvalid, res, next)).toThrow(
       expect.objectContaining({ statusCode: 401 })
@@ -404,10 +404,25 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
 
     // 10c: Valid secret
     const reqValid = {
-      headers: { "x-service-secret": "super-secret-service-token" },
+      headers: { "x-internal-secret": "super-secret-service-token" },
     } as unknown as Request;
     expect(() => requireInternalAuth(reqValid, res, next)).not.toThrow();
     expect(next).toHaveBeenCalled();
+  });
+
+  it("10e. Only the x-internal-secret header is accepted", () => {
+    const next: NextFunction = jest.fn();
+    const secret = "super-secret-service-token";
+    for (const headers of [
+      { "x-service-secret": secret },
+      { authorization: `Bearer ${secret}` },
+    ]) {
+      const req = { headers } as unknown as Request;
+      expect(() => requireInternalAuth(req, {} as Response, next)).toThrow(
+        expect.objectContaining({ statusCode: 401 })
+      );
+    }
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("10d. Missing server secret is a 500", () => {
@@ -443,6 +458,72 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       await expect(birthdayCtrl.markJobFailed(req, mockResponse())).rejects.toBeInstanceOf(
         ApiError
       );
+      expect(prisma.birthdayEmailLog.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("accepts UNCERTAIN and retries it like TRANSIENT", async () => {
+      (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
+        id: "job-1",
+        status: "PROCESSING",
+        lockToken: "tok",
+        attemptCount: 0,
+      });
+      (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+      const req = {
+        params: { id: "job-1" },
+        body: {
+          lockToken: "tok",
+          errorClassification: "UNCERTAIN",
+          errorMessage: "Network timeout: ETIMEDOUT",
+          isRetryable: true,
+        },
+      } as unknown as Request;
+      const res = mockResponse();
+
+      await birthdayCtrl.markJobFailed(req, res);
+
+      const body = (res.json as jest.Mock).mock.calls[0][0];
+      expect(body.status).toBe("FAILED");
+      // Attempt 1 backoff is 5 minutes
+      const diffMs = body.nextRetryAt.getTime() - Date.now();
+      expect(diffMs).toBeGreaterThan(4 * 60 * 1000);
+      expect(diffMs).toBeLessThanOrEqual(5 * 60 * 1000);
+    });
+
+    it("accepts a null providerMessageId and keeps the stored one", async () => {
+      (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
+        id: "job-1",
+        status: "PROCESSING",
+        lockToken: "tok",
+        attemptCount: 0,
+        providerMessageId: null,
+      });
+      (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+      const req = {
+        params: { id: "job-1" },
+        body: { lockToken: "tok", providerMessageId: null },
+      } as unknown as Request;
+
+      await birthdayCtrl.markJobSent(req, mockResponse());
+
+      expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "SENT", providerMessageId: null }),
+        })
+      );
+    });
+
+    it("rejects a non-string providerMessageId with 400", async () => {
+      const req = {
+        params: { id: "job-1" },
+        body: { lockToken: "tok", providerMessageId: 12345 },
+      } as unknown as Request;
+
+      await expect(birthdayCtrl.markJobSent(req, mockResponse())).rejects.toMatchObject({
+        statusCode: 400,
+      });
       expect(prisma.birthdayEmailLog.findUnique).not.toHaveBeenCalled();
     });
 

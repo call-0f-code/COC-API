@@ -21,8 +21,14 @@ export interface JobStats {
   total: number;
 }
 
+/**
+ * UNCERTAIN means the request to the email provider timed out after it was
+ * sent, so the email may or may not have gone out. It is retried like
+ * TRANSIENT (the provider's idempotency key stops a duplicate send).
+ */
 export const ERROR_CLASSIFICATIONS = [
   "TRANSIENT",
+  "UNCERTAIN",
   "PERMANENT",
   "CONFIG",
   "QUOTA",

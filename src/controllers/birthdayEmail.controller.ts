@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
 import * as birthdayEmailService from "../services/birthdayEmail.service";
-import {
-  ERROR_CLASSIFICATIONS,
-  ErrorClassification,
-} from "../services/birthdayEmail.service";
 import { ApiError } from "../utils/apiError";
+
+const { ERROR_CLASSIFICATIONS } = birthdayEmailService;
+type ErrorClassification = birthdayEmailService.ErrorClassification;
 
 function requireLockToken(body: Record<string, unknown>): string {
   const { lockToken } = body;
@@ -23,6 +22,14 @@ function parseSentAt(value: unknown): Date | undefined {
   return date;
 }
 
+function parseProviderMessageId(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") {
+    throw new ApiError("providerMessageId must be a string", 400);
+  }
+  return value;
+}
+
 function parseErrorClassification(value: unknown): ErrorClassification {
   if (value === undefined || value === null) return "TRANSIENT";
   if (!ERROR_CLASSIFICATIONS.includes(value as ErrorClassification)) {
@@ -37,7 +44,7 @@ function parseErrorClassification(value: unknown): ErrorClassification {
 /**
  * POST /api/v1/birthday-emails/initialize
  */
-export async function initializeJobs(req: Request, res: Response): Promise<void> {
+export const initializeJobs = async (req: Request, res: Response) => {
   const { birthdayYear, memberIds } = req.body || {};
 
   if (typeof birthdayYear !== "number") {
@@ -58,12 +65,12 @@ export async function initializeJobs(req: Request, res: Response): Promise<void>
     message: "Birthday jobs initialized",
     data: result,
   });
-}
+};
 
 /**
  * POST /api/v1/birthday-emails/claim
  */
-export async function claimJobs(req: Request, res: Response): Promise<void> {
+export const claimJobs = async (req: Request, res: Response) => {
   const { batchSize, leaseDurationMs } = req.body || {};
 
   const jobs = await birthdayEmailService.claimBirthdayJobs(
@@ -76,20 +83,21 @@ export async function claimJobs(req: Request, res: Response): Promise<void> {
     count: jobs.length,
     jobs,
   });
-}
+};
 
 /**
  * POST /api/v1/birthday-emails/:id/sent
  */
-export async function markJobSent(req: Request, res: Response): Promise<void> {
+export const markJobSent = async (req: Request, res: Response) => {
   const body = req.body || {};
   const lockToken = requireLockToken(body);
+  const providerMessageId = parseProviderMessageId(body.providerMessageId);
   const sentAt = parseSentAt(body.sentAt);
 
   const { alreadySent } = await birthdayEmailService.recordBirthdayJobSent(
     req.params.id,
     lockToken,
-    body.providerMessageId,
+    providerMessageId,
     sentAt
   );
 
@@ -97,12 +105,12 @@ export async function markJobSent(req: Request, res: Response): Promise<void> {
     success: true,
     message: alreadySent ? "Record was already marked as sent" : "Marked as sent",
   });
-}
+};
 
 /**
  * POST /api/v1/birthday-emails/:id/failed
  */
-export async function markJobFailed(req: Request, res: Response): Promise<void> {
+export const markJobFailed = async (req: Request, res: Response) => {
   const body = req.body || {};
   const lockToken = requireLockToken(body);
   const errorClassification = parseErrorClassification(body.errorClassification);
@@ -115,19 +123,20 @@ export async function markJobFailed(req: Request, res: Response): Promise<void> 
     typeof body.isRetryable === "boolean" ? body.isRetryable : true
   );
 
+  // Flat shape is the contract the COC-Members birthday worker is typed against.
   res.status(200).json({
     success: true,
     ...result,
   });
-}
+};
 
 /**
  * GET /api/v1/birthday-emails/stats
  */
-export async function getStats(_req: Request, res: Response): Promise<void> {
+export const getStats = async (_req: Request, res: Response) => {
   const stats = await birthdayEmailService.getBirthdayEmailStats();
   res.status(200).json({
     success: true,
     stats,
   });
-}
+};

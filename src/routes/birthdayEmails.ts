@@ -4,8 +4,7 @@ import { requireInternalAuth } from "../middleware/internalAuth";
 
 /**
  * Internal, service-to-service API used by the birthday email worker.
- * Every route requires the INTERNAL_SERVICE_SECRET, sent as an
- * `x-internal-secret` / `x-service-secret` header or as a Bearer token.
+ * Every route requires the INTERNAL_SERVICE_SECRET in the `x-internal-secret` header.
  */
 export default function birthdayEmailsRouter(): Router {
   const router = Router();
@@ -80,7 +79,7 @@ export default function birthdayEmailsRouter(): Router {
    * @apiParam (URL Params) {String} id Job ID.
    *
    * @apiBody {String} lockToken           Token returned by /claim. (Required)
-   * @apiBody {String} [providerMessageId] Email provider's message ID.
+   * @apiBody {String} [providerMessageId] Email provider's message ID (null allowed).
    * @apiBody {String} [sentAt]            ISO timestamp of the send. Defaults to now.
    *
    * @apiSuccess {Boolean} success Always true.
@@ -104,7 +103,8 @@ export default function birthdayEmailsRouter(): Router {
    * @apiParam (URL Params) {String} id Job ID.
    *
    * @apiBody {String}  lockToken Token returned by /claim. (Required)
-   * @apiBody {String="TRANSIENT","PERMANENT","CONFIG","QUOTA"} [errorClassification=TRANSIENT] Failure type.
+   * @apiBody {String="TRANSIENT","UNCERTAIN","PERMANENT","CONFIG","QUOTA"} [errorClassification=TRANSIENT] Failure type.
+   *   UNCERTAIN (provider timed out after the request was sent) is retried like TRANSIENT.
    * @apiBody {String}  [errorMessage]     Error details. Secrets are redacted before storing.
    * @apiBody {Boolean} [isRetryable=true] Whether the failure can be retried.
    *

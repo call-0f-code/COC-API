@@ -9,7 +9,7 @@ function sha256(value: string): Buffer {
 
 /**
  * Service-to-service authentication middleware for internal APIs.
- * Compares the incoming secret header against INTERNAL_SERVICE_SECRET in constant time.
+ * Compares the `x-internal-secret` header against INTERNAL_SERVICE_SECRET in constant time.
  */
 export function requireInternalAuth(
   req: Request,
@@ -25,16 +25,9 @@ export function requireInternalAuth(
     );
   }
 
-  const authHeader = req.headers["authorization"];
-  let providedSecret =
-    (req.headers["x-internal-secret"] as string) ||
-    (req.headers["x-service-secret"] as string);
+  const providedSecret = req.headers["x-internal-secret"];
 
-  if (!providedSecret && authHeader && authHeader.startsWith("Bearer ")) {
-    providedSecret = authHeader.substring(7).trim();
-  }
-
-  if (!providedSecret) {
+  if (!providedSecret || typeof providedSecret !== "string") {
     throw new ApiError(
       "Unauthorized: Missing internal service secret header",
       401
