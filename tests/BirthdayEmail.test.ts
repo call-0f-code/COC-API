@@ -70,48 +70,65 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
   // ──────────────────────────────────────────────
   it("1. Initializing the same member/year job twice creates one record", async () => {
     const memberId = "member-123";
-    (prisma.member.findMany as jest.Mock).mockResolvedValue([
-      { id: memberId, email: "alice@example.com" },
-    ]);
+    (prisma.member.findMany as jest.Mock).mockResolvedValue([{ id: memberId }]);
 
-    // First initialization: no existing log
-    (prisma.birthdayEmailLog.findMany as jest.Mock).mockResolvedValueOnce([]);
-    (prisma.birthdayEmailLog.createMany as jest.Mock).mockResolvedValueOnce({ count: 1 });
+    // First run inserts; second run hits the unique index and is skipped
+    (prisma.birthdayEmailLog.createMany as jest.Mock)
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
 
     const firstRun = await birthdayService.initializeBirthdayJobs(2026, [memberId]);
-    expect(firstRun.created).toBe(1);
-    expect(firstRun.existing).toBe(0);
-
-    // Second initialization: existing log found
-    (prisma.birthdayEmailLog.findMany as jest.Mock).mockResolvedValueOnce([
-      { memberId, status: "PENDING" },
-    ]);
+    expect(firstRun).toEqual({ created: 1, existing: 0, totalEligible: 1 });
 
     const secondRun = await birthdayService.initializeBirthdayJobs(2026, [memberId]);
-    expect(secondRun.created).toBe(0);
-    expect(secondRun.existing).toBe(1);
-    expect(prisma.birthdayEmailLog.createMany).toHaveBeenCalledTimes(1);
+    expect(secondRun).toEqual({ created: 0, existing: 1, totalEligible: 1 });
+
+    expect(prisma.birthdayEmailLog.createMany).toHaveBeenCalledWith({
+      data: [{ memberId, birthdayYear: 2026 }],
+      skipDuplicates: true,
+    });
   });
 
   // ──────────────────────────────────────────────
-  // 2. Existing SENT records are not reset
+  // 2. Existing records are never reset, and only eligible members get jobs
   // ──────────────────────────────────────────────
-  it("2. Existing SENT records are not reset during initialization", async () => {
-    const memberId = "member-sent";
-    (prisma.member.findMany as jest.Mock).mockResolvedValue([
-      { id: memberId, email: "sent@example.com" },
-    ]);
+  it("2. Existing records are not reset during initialization", async () => {
+    (prisma.member.findMany as jest.Mock).mockResolvedValue([{ id: "member-sent" }]);
+    (prisma.birthdayEmailLog.createMany as jest.Mock).mockResolvedValue({ count: 0 });
 
-    // Existing record is SENT
-    (prisma.birthdayEmailLog.findMany as jest.Mock).mockResolvedValueOnce([
-      { memberId, status: "SENT", attemptCount: 1 },
-    ]);
-
-    const res = await birthdayService.initializeBirthdayJobs(2026, [memberId]);
+    const res = await birthdayService.initializeBirthdayJobs(2026, ["member-sent"]);
     expect(res.created).toBe(0);
     expect(res.existing).toBe(1);
+    // Only inserts with skipDuplicates; never updates existing rows
     expect(prisma.birthdayEmailLog.update).not.toHaveBeenCalled();
+    expect(prisma.birthdayEmailLog.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("2b. Eligibility filter is applied in the member query", async () => {
+    (prisma.member.findMany as jest.Mock).mockResolvedValue([]);
+
+    const res = await birthdayService.initializeBirthdayJobs(2026, ["m1", "m1", " "]);
+    expect(res).toEqual({ created: 0, existing: 0, totalEligible: 0 });
+    expect(prisma.member.findMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ["m1"] },
+        isApproved: true,
+        isGhosted: false,
+        birth_date: { not: null },
+        email: { contains: "@" },
+      },
+      select: { id: true },
+    });
     expect(prisma.birthdayEmailLog.createMany).not.toHaveBeenCalled();
+  });
+
+  it("2c. Invalid initialize input is rejected with 400", async () => {
+    await expect(
+      birthdayService.initializeBirthdayJobs("2026" as unknown as number, ["m1"])
+    ).rejects.toMatchObject({ statusCode: 400 });
+    await expect(
+      birthdayService.initializeBirthdayJobs(2026, undefined as unknown as string[])
+    ).rejects.toMatchObject({ statusCode: 400 });
   });
 
   // ──────────────────────────────────────────────
@@ -194,18 +211,25 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
   // 5. A stale lock token cannot overwrite a newer worker's result
   // ──────────────────────────────────────────────
   it("5. A stale lock token cannot overwrite a newer worker's result (409 conflict)", async () => {
-    // Record in DB currently has 'newer-lock-token'
+    // Record in DB currently has 'newer-lock-token', so the guarded write matches nothing
     (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
       id: "job-conflict",
       status: "PROCESSING",
       lockToken: "newer-lock-token",
       attemptCount: 2,
     });
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
 
     await expect(
       birthdayService.recordBirthdayJobSent("job-conflict", "stale-old-token", "msg-123")
     ).rejects.toMatchObject({ statusCode: 409 });
+    expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "job-conflict", lockToken: "stale-old-token", status: "PROCESSING" },
+      })
+    );
 
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockClear();
     await expect(
       birthdayService.recordBirthdayJobFailed(
         "job-conflict",
@@ -215,11 +239,11 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
         true
       )
     ).rejects.toMatchObject({ statusCode: 409 });
-
+    // /failed rejects on its pre-read, before writing
     expect(prisma.birthdayEmailLog.updateMany).not.toHaveBeenCalled();
   });
 
-  it("5b. Losing the lease between the read and the write is rejected (409 conflict)", async () => {
+  it("5b. /failed losing the lease between the read and the write is rejected (409 conflict)", async () => {
     // The read still shows our lease...
     (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
       id: "job-race",
@@ -231,31 +255,23 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
     (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
 
     await expect(
-      birthdayService.recordBirthdayJobSent("job-race", "my-token", "msg-1")
-    ).rejects.toMatchObject({ statusCode: 409 });
-
-    await expect(
       birthdayService.recordBirthdayJobFailed("job-race", "my-token", "TRANSIENT", "boom", true)
     ).rejects.toMatchObject({ statusCode: 409 });
+  });
 
-    expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "job-race", lockToken: "my-token", status: "PROCESSING" },
-      })
-    );
+  it("5c. /sent for an unknown job is a 404", async () => {
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+    (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue(null);
+
+    await expect(
+      birthdayService.recordBirthdayJobSent("missing", "tok")
+    ).rejects.toMatchObject({ statusCode: 404 });
   });
 
   // ──────────────────────────────────────────────
   // 6. Successful sends persist provider IDs and timestamps
   // ──────────────────────────────────────────────
-  it("6. Successful sends persist provider IDs and timestamps", async () => {
-    (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
-      id: "job-success",
-      status: "PROCESSING",
-      lockToken: "valid-token-abc",
-      attemptCount: 0,
-      providerMessageId: null,
-    });
+  it("6. Successful sends persist provider IDs and timestamps in one write", async () => {
     (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
     const sentAt = new Date("2026-10-21T09:05:00.000Z");
@@ -275,12 +291,15 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
         sentAt,
         lockToken: null,
         lockedUntil: null,
-        attemptCount: 1,
+        attemptCount: { increment: 1 },
       }),
     });
+    expect(prisma.birthdayEmailLog.findUnique).not.toHaveBeenCalled();
   });
 
-  it("6b. Reporting an already SENT job is a no-op", async () => {
+  it("6b. Reporting an already SENT job (including overlapping calls) returns alreadySent", async () => {
+    // The guarded write matches nothing because the job is no longer PROCESSING
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
     (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
       id: "job-done",
       status: "SENT",
@@ -290,7 +309,6 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
 
     const res = await birthdayService.recordBirthdayJobSent("job-done", "any-token");
     expect(res.alreadySent).toBe(true);
-    expect(prisma.birthdayEmailLog.updateMany).not.toHaveBeenCalled();
   });
 
   // ──────────────────────────────────────────────
@@ -491,14 +509,7 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       expect(diffMs).toBeLessThanOrEqual(5 * 60 * 1000);
     });
 
-    it("accepts a null providerMessageId and keeps the stored one", async () => {
-      (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
-        id: "job-1",
-        status: "PROCESSING",
-        lockToken: "tok",
-        attemptCount: 0,
-        providerMessageId: null,
-      });
+    it("accepts a null providerMessageId and leaves the stored one unchanged", async () => {
       (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
       const req = {
@@ -508,11 +519,10 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
 
       await birthdayCtrl.markJobSent(req, mockResponse());
 
-      expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ status: "SENT", providerMessageId: null }),
-        })
-      );
+      const { data } = (prisma.birthdayEmailLog.updateMany as jest.Mock).mock.calls[0][0];
+      expect(data.status).toBe("SENT");
+      // undefined tells Prisma to leave the column as is
+      expect(data.providerMessageId).toBeUndefined();
     });
 
     it("rejects a non-string providerMessageId with 400", async () => {

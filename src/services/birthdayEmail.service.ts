@@ -1,15 +1,12 @@
 import prisma from "../db/client";
-import type { Prisma } from "../generated/prisma/client";
+import type { BirthdayEmailLog, Prisma } from "../generated/prisma/client";
 import { ApiError } from "../utils/apiError";
 import crypto from "crypto";
 
-export interface ClaimedJob {
-  id: string;
-  memberId: string;
-  birthdayYear: number;
-  attemptCount: number;
-  lockToken: string;
-}
+export type ClaimedJob = Pick<
+  BirthdayEmailLog,
+  "id" | "memberId" | "birthdayYear" | "attemptCount"
+> & { lockToken: string };
 
 export interface JobStats {
   pending: number;
@@ -96,64 +93,33 @@ export async function initializeBirthdayJobs(
     throw new ApiError("No valid member IDs provided", 400);
   }
 
-  // Fetch only eligible members: approved, not ghosted, has birth_date, has valid email
+  // Eligible: approved, not ghosted, has a birth date and an email address
   const eligibleMembers = await prisma.member.findMany({
     where: {
       id: { in: cleanIds },
       isApproved: true,
       isGhosted: false,
       birth_date: { not: null },
+      email: { contains: "@" },
     },
-    select: {
-      id: true,
-      email: true,
-    },
+    select: { id: true },
   });
 
-  const validEligible = eligibleMembers.filter(
-    (m) => typeof m.email === "string" && m.email.includes("@")
-  );
-
-  if (validEligible.length === 0) {
+  if (eligibleMembers.length === 0) {
     return { created: 0, existing: 0, totalEligible: 0 };
   }
 
-  const eligibleIds = validEligible.map((m) => m.id);
-
-  // Check existing logs to preserve state and avoid resetting SENT or attempt counts
-  const existingLogs = await prisma.birthdayEmailLog.findMany({
-    where: {
-      birthdayYear,
-      memberId: { in: eligibleIds },
-    },
-    select: {
-      memberId: true,
-    },
+  // The unique (memberId, birthdayYear) index makes skipDuplicates leave
+  // existing jobs untouched, so SENT jobs and attempt counts are never reset.
+  const { count: created } = await prisma.birthdayEmailLog.createMany({
+    data: eligibleMembers.map((m) => ({ memberId: m.id, birthdayYear })),
+    skipDuplicates: true,
   });
 
-  const existingMemberIdSet = new Set(existingLogs.map((l) => l.memberId));
-  const newMemberIds = eligibleIds.filter((id) => !existingMemberIdSet.has(id));
-
-  let createdCount = 0;
-  if (newMemberIds.length > 0) {
-    const recordsToCreate = newMemberIds.map((mId) => ({
-      memberId: mId,
-      birthdayYear,
-      status: "PENDING" as const,
-      attemptCount: 0,
-    }));
-
-    const result = await prisma.birthdayEmailLog.createMany({
-      data: recordsToCreate,
-      skipDuplicates: true,
-    });
-    createdCount = result.count;
-  }
-
   return {
-    created: createdCount,
-    existing: existingLogs.length,
-    totalEligible: validEligible.length,
+    created,
+    existing: eligibleMembers.length - created,
+    totalEligible: eligibleMembers.length,
   };
 }
 
@@ -264,19 +230,18 @@ function leaseConflict(): ApiError {
  * Write a job result only if the caller still holds the lease.
  * The lease check and the write are one statement, so a worker whose lease
  * expired cannot overwrite a job that another worker has since claimed.
+ * Returns false when the caller no longer holds the lease.
  */
 async function updateIfLeaseOwned(
   id: string,
   lockToken: string,
   data: Prisma.BirthdayEmailLogUpdateManyMutationInput
-): Promise<void> {
+): Promise<boolean> {
   const { count } = await prisma.birthdayEmailLog.updateMany({
     where: { id, lockToken, status: "PROCESSING" },
     data,
   });
-  if (count === 0) {
-    throw leaseConflict();
-  }
+  return count > 0;
 }
 
 /**
@@ -289,28 +254,27 @@ export async function recordBirthdayJobSent(
   providerMessageId?: string,
   sentAt: Date = new Date()
 ): Promise<{ alreadySent: boolean }> {
-  const record = await findJobOrThrow(id);
-
-  if (record.status === "SENT") {
-    return { alreadySent: true };
-  }
-
-  if (record.status !== "PROCESSING" || record.lockToken !== lockToken) {
-    throw leaseConflict();
-  }
-
-  await updateIfLeaseOwned(id, lockToken, {
+  const updated = await updateIfLeaseOwned(id, lockToken, {
     status: "SENT",
-    providerMessageId: providerMessageId ?? record.providerMessageId,
+    providerMessageId, // undefined leaves any stored ID unchanged
     sentAt,
     lockToken: null,
     lockedUntil: null,
     nextRetryAt: null,
-    attemptCount: record.attemptCount + 1,
+    attemptCount: { increment: 1 },
     lastError: null,
   });
 
-  return { alreadySent: false };
+  if (updated) {
+    return { alreadySent: false };
+  }
+
+  // Nothing written: work out why.
+  const record = await findJobOrThrow(id);
+  if (record.status === "SENT") {
+    return { alreadySent: true };
+  }
+  throw leaseConflict();
 }
 
 /**
@@ -350,7 +314,7 @@ export async function recordBirthdayJobFailed(
     nextRetryAt = new Date(Date.now() + delayMs);
   }
 
-  await updateIfLeaseOwned(id, lockToken, {
+  const updated = await updateIfLeaseOwned(id, lockToken, {
     status,
     attemptCount,
     nextRetryAt,
@@ -358,9 +322,23 @@ export async function recordBirthdayJobFailed(
     lockToken: null,
     lockedUntil: null,
   });
+  if (!updated) {
+    throw leaseConflict();
+  }
 
   return { status, attemptCount, nextRetryAt };
 }
+
+const STATS_KEY_BY_STATUS: Record<
+  BirthdayEmailLog["status"],
+  "pending" | "processing" | "sent" | "failed" | "dead"
+> = {
+  PENDING: "pending",
+  PROCESSING: "processing",
+  SENT: "sent",
+  FAILED: "failed",
+  DEAD: "dead",
+};
 
 /**
  * Fetch tracking statistics without exposing member emails.
@@ -383,24 +361,8 @@ export async function getBirthdayEmailStats(): Promise<JobStats> {
 
   for (const group of countsByStatus) {
     const count = group._count.id;
+    stats[STATS_KEY_BY_STATUS[group.status]] = count;
     stats.total += count;
-    switch (group.status) {
-      case "PENDING":
-        stats.pending = count;
-        break;
-      case "PROCESSING":
-        stats.processing = count;
-        break;
-      case "SENT":
-        stats.sent = count;
-        break;
-      case "FAILED":
-        stats.failed = count;
-        break;
-      case "DEAD":
-        stats.dead = count;
-        break;
-    }
   }
 
   const dueForRetry = await prisma.birthdayEmailLog.count({

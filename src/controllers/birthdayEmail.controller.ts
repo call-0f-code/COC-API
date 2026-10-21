@@ -45,15 +45,8 @@ function parseErrorClassification(value: unknown): ErrorClassification {
  * POST /api/v1/birthday-emails/initialize
  */
 export const initializeJobs = async (req: Request, res: Response) => {
+  // birthdayYear and memberIds are validated by the service
   const { birthdayYear, memberIds } = req.body || {};
-
-  if (typeof birthdayYear !== "number") {
-    throw new ApiError("birthdayYear is required and must be a number", 400);
-  }
-
-  if (!Array.isArray(memberIds)) {
-    throw new ApiError("memberIds is required and must be an array of strings", 400);
-  }
 
   const result = await birthdayEmailService.initializeBirthdayJobs(
     birthdayYear,
