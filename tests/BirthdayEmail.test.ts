@@ -3,6 +3,7 @@ import * as birthdayService from "../src/services/birthdayEmail.service";
 import * as birthdayCtrl from "../src/controllers/birthdayEmail.controller";
 import { requireInternalAuth } from "../src/middleware/internalAuth";
 import prisma from "../src/db/client";
+import config from "../src/config";
 import { ApiError } from "../src/utils/apiError";
 
 jest.mock("../src/db/client", () => {
@@ -16,6 +17,7 @@ jest.mock("../src/db/client", () => {
       findUnique: jest.fn(),
       createMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       groupBy: jest.fn(),
       count: jest.fn(),
     },
@@ -29,17 +31,38 @@ jest.mock("../src/db/client", () => {
   };
 });
 
-describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
-  const originalEnv = process.env;
+const mockResponse = (): Response => {
+  const res = {} as Response;
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
+  return res;
+};
 
+/** Run claimBirthdayJobs against a fake transaction returning the given rows. */
+function mockClaimTransaction(
+  rows: Array<{ id: string; status: string; attemptCount: number }>
+) {
+  const update = jest.fn().mockImplementation(({ where, data }) =>
+    Promise.resolve({
+      id: where.id,
+      memberId: `member-of-${where.id}`,
+      birthdayYear: 2026,
+      attemptCount: data.attemptCount,
+    })
+  );
+  (prisma.$transaction as jest.Mock).mockImplementationOnce(async (callback) =>
+    callback({
+      $queryRaw: jest.fn().mockResolvedValue(rows),
+      birthdayEmailLog: { update },
+    })
+  );
+  return update;
+}
+
+describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env = { ...originalEnv };
-    process.env.INTERNAL_SERVICE_SECRET = "super-secret-service-token";
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
+    config.INTERNAL_SERVICE_SECRET = "super-secret-service-token";
   });
 
   // ──────────────────────────────────────────────
@@ -95,72 +118,76 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
   // 3. Two concurrent workers cannot claim the same active job
   // ──────────────────────────────────────────────
   it("3. Atomic job claim locks jobs and prevents concurrent workers from claiming the same active job", async () => {
-    const jobRow = { id: "job-1" };
-
-    // Transaction executes queryRaw and update
-    (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-      const tx = {
-        $queryRaw: jest.fn().mockResolvedValue([jobRow]),
-        birthdayEmailLog: {
-          update: jest.fn().mockResolvedValue({
-            id: "job-1",
-            memberId: "m-1",
-            birthdayYear: 2026,
-            attemptCount: 0,
-            lockToken: "token-worker-1",
-          }),
-        },
-      };
-      return await callback(tx);
-    });
+    mockClaimTransaction([{ id: "job-1", status: "PENDING", attemptCount: 0 }]);
 
     const claimed = await birthdayService.claimBirthdayJobs(10, 300000);
     expect(claimed).toHaveLength(1);
     expect(claimed[0].id).toBe("job-1");
-    expect(claimed[0].lockToken).toBeDefined();
+    expect(claimed[0].attemptCount).toBe(0);
+    expect(claimed[0].lockToken).toEqual(expect.any(String));
 
     // Second worker claims concurrently, queryRaw returns empty (already locked/skipped)
-    (prisma.$transaction as jest.Mock).mockImplementationOnce(async (callback) => {
-      const tx = {
-        $queryRaw: jest.fn().mockResolvedValue([]),
-        birthdayEmailLog: { update: jest.fn() },
-      };
-      return await callback(tx);
-    });
+    mockClaimTransaction([]);
 
     const secondClaim = await birthdayService.claimBirthdayJobs(10, 300000);
     expect(secondClaim).toHaveLength(0);
   });
 
   // ──────────────────────────────────────────────
-  // 4. Expired PROCESSING jobs can be recovered
+  // 4. Expired PROCESSING jobs can be recovered, and the lost attempt counts
   // ──────────────────────────────────────────────
-  it("4. Expired PROCESSING jobs can be recovered by claim query", async () => {
-    (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-      const tx = {
-        $queryRaw: jest.fn().mockImplementation((strings, ...values) => {
-          // Verify query includes lease expiration check: lockedUntil < now
-          const queryText = strings.join("");
-          expect(queryText).toContain('"lockedUntil" <');
-          return Promise.resolve([{ id: "expired-job-1" }]);
+  it("4. Expired PROCESSING jobs are reclaimed and the lost attempt is counted", async () => {
+    let queryText = "";
+    const update = jest.fn().mockImplementation(({ where, data }) =>
+      Promise.resolve({
+        id: where.id,
+        memberId: "m-expired",
+        birthdayYear: 2026,
+        attemptCount: data.attemptCount,
+      })
+    );
+    (prisma.$transaction as jest.Mock).mockImplementationOnce(async (callback) =>
+      callback({
+        $queryRaw: jest.fn().mockImplementation((strings: string[]) => {
+          queryText = strings.join("");
+          return Promise.resolve([
+            { id: "expired-job-1", status: "PROCESSING", attemptCount: 1 },
+          ]);
         }),
-        birthdayEmailLog: {
-          update: jest.fn().mockResolvedValue({
-            id: "expired-job-1",
-            memberId: "m-expired",
-            birthdayYear: 2026,
-            attemptCount: 1,
-            lockToken: "new-recovery-token",
-          }),
-        },
-      };
-      return await callback(tx);
-    });
+        birthdayEmailLog: { update },
+      })
+    );
 
     const claimed = await birthdayService.claimBirthdayJobs(5, 300000);
+    expect(queryText).toContain('"lockedUntil" <');
     expect(claimed).toHaveLength(1);
     expect(claimed[0].id).toBe("expired-job-1");
-    expect(claimed[0].lockToken).toBe("new-recovery-token");
+    expect(claimed[0].attemptCount).toBe(2);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "PROCESSING", attemptCount: 2 }),
+      })
+    );
+  });
+
+  it("4b. An expired PROCESSING job on its last attempt goes DEAD instead of being reclaimed", async () => {
+    const update = mockClaimTransaction([
+      { id: "crashy-job", status: "PROCESSING", attemptCount: 4 },
+      { id: "fresh-job", status: "PENDING", attemptCount: 0 },
+    ]);
+
+    const claimed = await birthdayService.claimBirthdayJobs(10, 300000);
+    expect(claimed.map((j) => j.id)).toEqual(["fresh-job"]);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "crashy-job" },
+        data: expect.objectContaining({
+          status: "DEAD",
+          attemptCount: 5,
+          lockToken: null,
+        }),
+      })
+    );
   });
 
   // ──────────────────────────────────────────────
@@ -175,26 +202,10 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       attemptCount: 2,
     });
 
-    // Stale worker tries to report sent with old token
     await expect(
-      birthdayService.recordBirthdayJobSent(
-        "job-conflict",
-        "stale-old-token",
-        "msg-123"
-      )
-    ).rejects.toThrow(ApiError);
+      birthdayService.recordBirthdayJobSent("job-conflict", "stale-old-token", "msg-123")
+    ).rejects.toMatchObject({ statusCode: 409 });
 
-    try {
-      await birthdayService.recordBirthdayJobSent(
-        "job-conflict",
-        "stale-old-token",
-        "msg-123"
-      );
-    } catch (err: any) {
-      expect(err.statusCode).toBe(409);
-    }
-
-    // Stale worker tries to report failed with old token
     await expect(
       birthdayService.recordBirthdayJobFailed(
         "job-conflict",
@@ -203,7 +214,35 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
         "network timeout",
         true
       )
-    ).rejects.toThrow(ApiError);
+    ).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(prisma.birthdayEmailLog.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("5b. Losing the lease between the read and the write is rejected (409 conflict)", async () => {
+    // The read still shows our lease...
+    (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
+      id: "job-race",
+      status: "PROCESSING",
+      lockToken: "my-token",
+      attemptCount: 1,
+    });
+    // ...but another worker reclaimed it before our write landed.
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+
+    await expect(
+      birthdayService.recordBirthdayJobSent("job-race", "my-token", "msg-1")
+    ).rejects.toMatchObject({ statusCode: 409 });
+
+    await expect(
+      birthdayService.recordBirthdayJobFailed("job-race", "my-token", "TRANSIENT", "boom", true)
+    ).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "job-race", lockToken: "my-token", status: "PROCESSING" },
+      })
+    );
   });
 
   // ──────────────────────────────────────────────
@@ -217,35 +256,41 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       attemptCount: 0,
       providerMessageId: null,
     });
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
-    (prisma.birthdayEmailLog.update as jest.Mock).mockResolvedValue({
-      id: "job-success",
-      status: "SENT",
-      providerMessageId: "resend-msg-999",
-      sentAt: new Date("2026-10-21T09:05:00.000Z"),
-    });
-
+    const sentAt = new Date("2026-10-21T09:05:00.000Z");
     const res = await birthdayService.recordBirthdayJobSent(
       "job-success",
       "valid-token-abc",
       "resend-msg-999",
-      "2026-10-21T09:05:00.000Z"
+      sentAt
     );
 
-    expect(res.success).toBe(true);
-    expect(prisma.birthdayEmailLog.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "job-success" },
-        data: expect.objectContaining({
-          status: "SENT",
-          providerMessageId: "resend-msg-999",
-          sentAt: new Date("2026-10-21T09:05:00.000Z"),
-          lockToken: null,
-          lockedUntil: null,
-          attemptCount: 1,
-        }),
-      })
-    );
+    expect(res.alreadySent).toBe(false);
+    expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith({
+      where: { id: "job-success", lockToken: "valid-token-abc", status: "PROCESSING" },
+      data: expect.objectContaining({
+        status: "SENT",
+        providerMessageId: "resend-msg-999",
+        sentAt,
+        lockToken: null,
+        lockedUntil: null,
+        attemptCount: 1,
+      }),
+    });
+  });
+
+  it("6b. Reporting an already SENT job is a no-op", async () => {
+    (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
+      id: "job-done",
+      status: "SENT",
+      lockToken: null,
+      attemptCount: 1,
+    });
+
+    const res = await birthdayService.recordBirthdayJobSent("job-done", "any-token");
+    expect(res.alreadySent).toBe(true);
+    expect(prisma.birthdayEmailLog.updateMany).not.toHaveBeenCalled();
   });
 
   // ──────────────────────────────────────────────
@@ -258,8 +303,7 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       lockToken: "tok-retry",
       attemptCount: 1, // attempt 1 failed, next will be attempt 2
     });
-
-    (prisma.birthdayEmailLog.update as jest.Mock).mockResolvedValue({});
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
     const res = await birthdayService.recordBirthdayJobFailed(
       "job-retryable",
@@ -269,7 +313,6 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       true
     );
 
-    expect(res.success).toBe(true);
     expect(res.status).toBe("FAILED");
     expect(res.attemptCount).toBe(2);
     expect(res.nextRetryAt).toBeInstanceOf(Date);
@@ -289,8 +332,7 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       lockToken: "tok-perm",
       attemptCount: 0,
     });
-
-    (prisma.birthdayEmailLog.update as jest.Mock).mockResolvedValue({});
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
     const res = await birthdayService.recordBirthdayJobFailed(
       "job-perm",
@@ -300,11 +342,10 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       false
     );
 
-    expect(res.success).toBe(true);
     expect(res.status).toBe("DEAD");
     expect(res.nextRetryAt).toBeNull();
     expect(res.attemptCount).toBe(1);
-    expect(prisma.birthdayEmailLog.update).toHaveBeenCalledWith(
+    expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           status: "DEAD",
@@ -324,8 +365,7 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       lockToken: "tok-max",
       attemptCount: 4, // 5th attempt failing
     });
-
-    (prisma.birthdayEmailLog.update as jest.Mock).mockResolvedValue({});
+    (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
     const res = await birthdayService.recordBirthdayJobFailed(
       "job-max-attempt",
@@ -335,7 +375,6 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
       true
     );
 
-    expect(res.success).toBe(true);
     expect(res.status).toBe("DEAD");
     expect(res.attemptCount).toBe(5);
     expect(res.nextRetryAt).toBeNull();
@@ -346,43 +385,126 @@ describe("Central Backend: Birthday Email Tracking & Internal APIs", () => {
   // ──────────────────────────────────────────────
   it("10. Unauthorized internal API requests are rejected by middleware", () => {
     const next: NextFunction = jest.fn();
-
-    // 10a: Missing secret
-    const reqMissing = {
-      headers: {},
-    } as unknown as Request;
     const res = {} as Response;
 
-    expect(() => requireInternalAuth(reqMissing, res, next)).toThrow(ApiError);
-    try {
-      requireInternalAuth(reqMissing, res, next);
-    } catch (err: any) {
-      expect(err.statusCode).toBe(401);
-    }
+    // 10a: Missing secret
+    const reqMissing = { headers: {} } as unknown as Request;
+    expect(() => requireInternalAuth(reqMissing, res, next)).toThrow(
+      expect.objectContaining({ statusCode: 401 })
+    );
 
-    // 10b: Invalid secret
+    // 10b: Invalid secret (different length from the real one)
     const reqInvalid = {
-      headers: {
-        "x-service-secret": "wrong-secret-token",
-      },
+      headers: { "x-service-secret": "wrong" },
     } as unknown as Request;
-
-    expect(() => requireInternalAuth(reqInvalid, res, next)).toThrow(ApiError);
-    try {
-      requireInternalAuth(reqInvalid, res, next);
-    } catch (err: any) {
-      expect(err.statusCode).toBe(401);
-    }
+    expect(() => requireInternalAuth(reqInvalid, res, next)).toThrow(
+      expect.objectContaining({ statusCode: 401 })
+    );
+    expect(next).not.toHaveBeenCalled();
 
     // 10c: Valid secret
     const reqValid = {
-      headers: {
-        "x-service-secret": "super-secret-service-token",
-      },
+      headers: { "x-service-secret": "super-secret-service-token" },
     } as unknown as Request;
-
     expect(() => requireInternalAuth(reqValid, res, next)).not.toThrow();
     expect(next).toHaveBeenCalled();
+  });
+
+  it("10d. Missing server secret is a 500", () => {
+    config.INTERNAL_SERVICE_SECRET = undefined;
+    const req = { headers: { "x-internal-secret": "anything" } } as unknown as Request;
+    expect(() => requireInternalAuth(req, {} as Response, jest.fn())).toThrow(
+      expect.objectContaining({ statusCode: 500 })
+    );
+  });
+
+  // ──────────────────────────────────────────────
+  // 11. Controller input validation and response shape
+  // ──────────────────────────────────────────────
+  describe("controller", () => {
+    it("rejects an invalid sentAt with 400", async () => {
+      const req = {
+        params: { id: "job-1" },
+        body: { lockToken: "tok", sentAt: "not-a-date" },
+      } as unknown as Request;
+
+      await expect(birthdayCtrl.markJobSent(req, mockResponse())).rejects.toMatchObject({
+        statusCode: 400,
+      });
+      expect(prisma.birthdayEmailLog.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("rejects an unknown errorClassification with 400", async () => {
+      const req = {
+        params: { id: "job-1" },
+        body: { lockToken: "tok", errorClassification: "permanent" },
+      } as unknown as Request;
+
+      await expect(birthdayCtrl.markJobFailed(req, mockResponse())).rejects.toBeInstanceOf(
+        ApiError
+      );
+      expect(prisma.birthdayEmailLog.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("rejects a missing lockToken with 400", async () => {
+      const req = { params: { id: "job-1" }, body: {} } as unknown as Request;
+
+      await expect(birthdayCtrl.markJobSent(req, mockResponse())).rejects.toMatchObject({
+        statusCode: 400,
+      });
+    });
+
+    it("wraps a failure result as { success: true, ... }", async () => {
+      (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
+        id: "job-1",
+        status: "PROCESSING",
+        lockToken: "tok",
+        attemptCount: 0,
+      });
+      (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+      const req = {
+        params: { id: "job-1" },
+        body: { lockToken: "tok", errorClassification: "QUOTA", errorMessage: "429" },
+      } as unknown as Request;
+      const res = mockResponse();
+
+      await birthdayCtrl.markJobFailed(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        status: "FAILED",
+        attemptCount: 1,
+        nextRetryAt: expect.any(Date),
+      });
+    });
+
+    it("passes a valid sentAt through as a Date", async () => {
+      (prisma.birthdayEmailLog.findUnique as jest.Mock).mockResolvedValue({
+        id: "job-1",
+        status: "PROCESSING",
+        lockToken: "tok",
+        attemptCount: 0,
+        providerMessageId: null,
+      });
+      (prisma.birthdayEmailLog.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+      const req = {
+        params: { id: "job-1" },
+        body: { lockToken: "tok", sentAt: "2026-10-21T09:05:00.000Z" },
+      } as unknown as Request;
+      const res = mockResponse();
+
+      await birthdayCtrl.markJobSent(req, res);
+
+      expect(prisma.birthdayEmailLog.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ sentAt: new Date("2026-10-21T09:05:00.000Z") }),
+        })
+      );
+      expect(res.json).toHaveBeenCalledWith({ success: true, message: "Marked as sent" });
+    });
   });
 
   // ──────────────────────────────────────────────

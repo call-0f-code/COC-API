@@ -1,4 +1,5 @@
 import prisma from "../db/client";
+import type { Prisma } from "../generated/prisma/client";
 import { ApiError } from "../utils/apiError";
 import crypto from "crypto";
 
@@ -20,16 +21,29 @@ export interface JobStats {
   total: number;
 }
 
-/** Retry delays in milliseconds based on attempt count */
-const RETRY_DELAYS_MS: Record<number, number> = {
-  1: 5 * 60 * 1000, // 5 min
-  2: 15 * 60 * 1000, // 15 min
-  3: 30 * 60 * 1000, // 30 min
-  4: 120 * 60 * 1000, // 120 min
-};
+export const ERROR_CLASSIFICATIONS = [
+  "TRANSIENT",
+  "PERMANENT",
+  "CONFIG",
+  "QUOTA",
+] as const;
+export type ErrorClassification = (typeof ERROR_CLASSIFICATIONS)[number];
 
-const QUOTA_RETRY_DELAY_MS = 4 * 60 * 60 * 1000; // 4 hours for quota exhaustion
+export interface FailedJobResult {
+  status: "FAILED" | "DEAD";
+  attemptCount: number;
+  nextRetryAt: Date | null;
+}
+
+const MINUTE_MS = 60 * 1000;
+
+/** Retry delay after the Nth failed attempt (index 0 = after attempt 1). */
+const RETRY_DELAYS_MS = [5, 15, 30, 120].map((m) => m * MINUTE_MS);
+const QUOTA_RETRY_DELAY_MS = 4 * 60 * MINUTE_MS;
 const MAX_ATTEMPTS = 5;
+
+export const DEFAULT_BATCH_SIZE = 10;
+export const DEFAULT_LEASE_MS = 5 * MINUTE_MS;
 
 /**
  * Sanitize error message to ensure no secrets, keys, or bearer tokens are stored.
@@ -42,6 +56,11 @@ function sanitizeErrorMessage(msg: string): string {
     .replace(/(secret\s*[:=]\s*)[^\s]+/gi, "$1[REDACTED]")
     .replace(/(re_[a-zA-Z0-9_-]{20,})/g, "[REDACTED_RESEND_KEY]")
     .substring(0, 500);
+}
+
+function retryDelayFor(attemptCount: number): number {
+  const index = Math.min(Math.max(attemptCount, 1), RETRY_DELAYS_MS.length) - 1;
+  return RETRY_DELAYS_MS[index];
 }
 
 /**
@@ -139,10 +158,14 @@ export async function initializeBirthdayJobs(
  *  - FAILED and nextRetryAt <= now
  *  - PROCESSING and lease expired (lockedUntil < now)
  * Prevents race conditions with FOR UPDATE SKIP LOCKED.
+ *
+ * An expired PROCESSING lease means the previous worker never reported a
+ * result (for example, it crashed), so that lost attempt is counted. A job
+ * that runs out of attempts this way is moved to DEAD instead of reclaimed.
  */
 export async function claimBirthdayJobs(
-  batchSize = 10,
-  leaseDurationMs = 300000
+  batchSize = DEFAULT_BATCH_SIZE,
+  leaseDurationMs = DEFAULT_LEASE_MS
 ): Promise<ClaimedJob[]> {
   const safeBatchSize = Math.max(1, Math.min(batchSize, 50));
   const safeLeaseMs = Math.max(10000, Math.min(leaseDurationMs, 3600000));
@@ -150,8 +173,10 @@ export async function claimBirthdayJobs(
 
   return await prisma.$transaction(async (tx) => {
     // Select eligible jobs with row-level locks, skipping already-locked rows
-    const eligible = await tx.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM "BirthdayEmailLog"
+    const eligible = await tx.$queryRaw<
+      Array<{ id: string; status: string; attemptCount: number }>
+    >`
+      SELECT id, "status", "attemptCount" FROM "BirthdayEmailLog"
       WHERE (
         "status" = 'PENDING'::"BirthdayEmailStatus" OR
         ("status" = 'FAILED'::"BirthdayEmailStatus" AND ("nextRetryAt" IS NULL OR "nextRetryAt" <= ${now})) OR
@@ -170,11 +195,32 @@ export async function claimBirthdayJobs(
     const claimed: ClaimedJob[] = [];
 
     for (const row of eligible) {
+      let attemptCount = row.attemptCount;
+
+      if (row.status === "PROCESSING") {
+        attemptCount += 1;
+        if (attemptCount >= MAX_ATTEMPTS) {
+          await tx.birthdayEmailLog.update({
+            where: { id: row.id },
+            data: {
+              status: "DEAD",
+              attemptCount,
+              lastError: "Lease expired: worker never reported a result",
+              lockToken: null,
+              lockedUntil: null,
+              nextRetryAt: null,
+            },
+          });
+          continue;
+        }
+      }
+
       const lockToken = crypto.randomUUID();
       const updated = await tx.birthdayEmailLog.update({
         where: { id: row.id },
         data: {
           status: "PROCESSING",
+          attemptCount,
           lockToken,
           lockedUntil,
         },
@@ -183,78 +229,82 @@ export async function claimBirthdayJobs(
           memberId: true,
           birthdayYear: true,
           attemptCount: true,
-          lockToken: true,
         },
       });
 
-      if (updated.lockToken) {
-        claimed.push({
-          id: updated.id,
-          memberId: updated.memberId,
-          birthdayYear: updated.birthdayYear,
-          attemptCount: updated.attemptCount,
-          lockToken: updated.lockToken,
-        });
-      }
+      claimed.push({ ...updated, lockToken });
     }
 
     return claimed;
   });
 }
 
+async function findJobOrThrow(id: string) {
+  const record = await prisma.birthdayEmailLog.findUnique({ where: { id } });
+  if (!record) {
+    throw new ApiError("Birthday email record not found", 404);
+  }
+  return record;
+}
+
+function leaseConflict(): ApiError {
+  return new ApiError(
+    "Invalid or expired lock token: job is no longer owned by caller",
+    409
+  );
+}
+
+/**
+ * Write a job result only if the caller still holds the lease.
+ * The lease check and the write are one statement, so a worker whose lease
+ * expired cannot overwrite a job that another worker has since claimed.
+ */
+async function updateIfLeaseOwned(
+  id: string,
+  lockToken: string,
+  data: Prisma.BirthdayEmailLogUpdateManyMutationInput
+): Promise<void> {
+  const { count } = await prisma.birthdayEmailLog.updateMany({
+    where: { id, lockToken, status: "PROCESSING" },
+    data,
+  });
+  if (count === 0) {
+    throw leaseConflict();
+  }
+}
+
 /**
  * Mark a claimed birthday email job as SENT.
- * Validates the lockToken to guard against stale workers.
+ * Returns `alreadySent: true` when the job had already been marked as sent.
  */
 export async function recordBirthdayJobSent(
   id: string,
   lockToken: string,
   providerMessageId?: string,
-  sentAt?: string
-): Promise<{ success: boolean; message: string }> {
-  if (!id || typeof id !== "string") {
-    throw new ApiError("Missing tracking record id", 400);
-  }
-  if (!lockToken || typeof lockToken !== "string") {
-    throw new ApiError("Missing lockToken", 400);
-  }
+  sentAt: Date = new Date()
+): Promise<{ alreadySent: boolean }> {
+  const record = await findJobOrThrow(id);
 
-  const record = await prisma.birthdayEmailLog.findUnique({
-    where: { id },
-  });
-
-  if (!record) {
-    throw new ApiError("Birthday email record not found", 404);
-  }
-
-  // Idempotent duplicate check: already SENT with provider ID
   if (record.status === "SENT") {
-    return { success: true, message: "Record was already marked as sent" };
+    return { alreadySent: true };
   }
 
-  // Validate lease ownership
   if (record.status !== "PROCESSING" || record.lockToken !== lockToken) {
-    throw new ApiError(
-      "Invalid or expired lock token: job is no longer owned by caller",
-      409
-    );
+    throw leaseConflict();
   }
 
-  await prisma.birthdayEmailLog.update({
-    where: { id },
-    data: {
-      status: "SENT",
-      providerMessageId: providerMessageId ?? record.providerMessageId,
-      sentAt: sentAt ? new Date(sentAt) : new Date(),
-      lockToken: null,
-      lockedUntil: null,
-      nextRetryAt: null,
-      attemptCount: record.attemptCount + 1,
-      lastError: null,
-    },
+  await updateIfLeaseOwned(id, lockToken, {
+    status: "SENT",
+    providerMessageId: providerMessageId ?? record.providerMessageId,
+    sentAt,
+    lockToken: null,
+    lockedUntil: null,
+    nextRetryAt: null,
+    attemptCount: record.attemptCount + 1,
+    lastError: null,
   });
 
-  return { success: true, message: "Marked as sent" };
+  return { alreadySent: false };
 }
 
 /**
@@ -264,78 +314,46 @@ export async function recordBirthdayJobSent(
 export async function recordBirthdayJobFailed(
   id: string,
   lockToken: string,
-  errorClassification: string,
+  errorClassification: ErrorClassification,
   errorMessage: string,
   isRetryable: boolean
-): Promise<{
-  success: boolean;
-  status: "FAILED" | "DEAD";
-  attemptCount: number;
-  nextRetryAt: Date | null;
-}> {
-  if (!id || typeof id !== "string") {
-    throw new ApiError("Missing tracking record id", 400);
-  }
-  if (!lockToken || typeof lockToken !== "string") {
-    throw new ApiError("Missing lockToken", 400);
-  }
-
-  const record = await prisma.birthdayEmailLog.findUnique({
-    where: { id },
-  });
-
-  if (!record) {
-    throw new ApiError("Birthday email record not found", 404);
-  }
+): Promise<FailedJobResult> {
+  const record = await findJobOrThrow(id);
 
   if (record.status !== "PROCESSING" || record.lockToken !== lockToken) {
-    throw new ApiError(
-      "Invalid or expired lock token: job is no longer owned by caller",
-      409
-    );
+    throw leaseConflict();
   }
 
-  const newAttemptCount = record.attemptCount + 1;
-  const sanitized = sanitizeErrorMessage(errorMessage);
-
+  const attemptCount = record.attemptCount + 1;
   const isPermanent =
     !isRetryable ||
     errorClassification === "PERMANENT" ||
     errorClassification === "CONFIG";
 
-  let newStatus: "FAILED" | "DEAD";
+  let status: "FAILED" | "DEAD";
   let nextRetryAt: Date | null = null;
 
-  if (isPermanent || newAttemptCount >= MAX_ATTEMPTS) {
-    newStatus = "DEAD";
-    nextRetryAt = null;
+  if (isPermanent || attemptCount >= MAX_ATTEMPTS) {
+    status = "DEAD";
   } else {
-    newStatus = "FAILED";
-    let delayMs = RETRY_DELAYS_MS[newAttemptCount] || 120 * 60 * 1000;
-    if (errorClassification === "QUOTA") {
-      delayMs = QUOTA_RETRY_DELAY_MS;
-    }
+    status = "FAILED";
+    const delayMs =
+      errorClassification === "QUOTA"
+        ? QUOTA_RETRY_DELAY_MS
+        : retryDelayFor(attemptCount);
     nextRetryAt = new Date(Date.now() + delayMs);
   }
 
-  await prisma.birthdayEmailLog.update({
-    where: { id },
-    data: {
-      status: newStatus,
-      attemptCount: newAttemptCount,
-      nextRetryAt,
-      lastError: sanitized,
-      lockToken: null,
-      lockedUntil: null,
-    },
+  await updateIfLeaseOwned(id, lockToken, {
+    status,
+    attemptCount,
+    nextRetryAt,
+    lastError: sanitizeErrorMessage(errorMessage),
+    lockToken: null,
+    lockedUntil: null,
   });
 
-  return {
-    success: true,
-    status: newStatus,
-    attemptCount: newAttemptCount,
-    nextRetryAt,
-  };
+  return { status, attemptCount, nextRetryAt };
 }
 
 /**

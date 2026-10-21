@@ -9,7 +9,7 @@ import progressRouter from './progress'
 import membersRouter from './members'
 import siteContentRouter from './site-content'
 import emailRouter from './email'
-import internalBirthdayRouter from './internalBirthday'
+import birthdayEmailsRouter from './birthdayEmails'
 
 export default function routes(upload: Multer) {
   const router = Router();
@@ -29,7 +29,7 @@ export default function routes(upload: Multer) {
 
   router.use("/site-content", siteContentRouter(upload));
   router.use("/email", emailRouter());
-  router.use("/birthday-emails", internalBirthdayRouter());
+  router.use("/birthday-emails", birthdayEmailsRouter());
 
   return router;
 }
