@@ -1,6 +1,6 @@
 # Dependencies
 node_modules
-bun.lockb
+bun.lock
 
 # Build outputs
 dist
@@ -9,8 +9,7 @@ build
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
 
 # Logs
 logs

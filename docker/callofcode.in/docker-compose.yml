@@ -1,0 +1,56 @@
+name: coc-callofcode
+
+services:
+
+  coc-api:
+    image: coc-api
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: builder        # Use builder stage in dev (has devDeps + bun watch)
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - ../../.env.local      # Local dev env vars (Supabase connection strings, etc.)
+    environment:
+      NODE_ENV: development
+    volumes:
+      # Mount source for live-reload (everything except node_modules)
+      - ../../:/app
+      - /app/node_modules
+      - /app/node_modules/.prisma
+    command: >
+      sh -c "bunx prisma generate &&
+             bunx prisma migrate deploy &&
+             bun --watch src/server.ts"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - coc-local
+
+  frontend:
+    image: callofcode07/callofcode:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.local.frontend
+    environment:
+      - NODE_ENV=development
+      - API_BASE_URL=http://coc-api:3000
+    depends_on:
+      coc-api:
+        condition: service_healthy
+    networks:
+      - coc-local
+    command: ["npm", "run", "dev"]
+
+networks:
+  coc-local:
+    driver: bridge
