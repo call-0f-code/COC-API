@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { Multer } from 'multer'
-import { SupabaseClient } from '@supabase/supabase-js'
 import projectsRouter from './projects'
 import acheivementsRouter from './achievements'
 import interviewRouter from './interviews'
@@ -10,6 +9,7 @@ import progressRouter from './progress'
 import membersRouter from './members'
 import siteContentRouter from './site-content'
 import emailRouter from './email'
+import internalBirthdayRouter from './internalBirthday'
 
 export default function routes(upload: Multer) {
   const router = Router();
@@ -29,6 +29,7 @@ export default function routes(upload: Multer) {
 
   router.use("/site-content", siteContentRouter(upload));
   router.use("/email", emailRouter());
+  router.use("/birthday-emails", internalBirthdayRouter());
 
   return router;
 }
